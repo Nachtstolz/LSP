@@ -295,7 +295,7 @@ int main() {
 
 - `strchr` 함수를 사용해서 개행문자를 찾는 방법 생각. 찾은 개행문자를 `'\0'`로 변경해주는 방법 생각 -> `strchr`로 `'\n'`을 찾아서 바꾸는 방법 성공.
 
-- `strchr` :
+- **strchr** :
 	* 헤더 파일 : `#include <string.h>`
 	* 함수 원형 : `char *strchr(const char *s, int c);`
 	* 문자열 s에서 원하는 c라는 문자를 찾아주는 함수
