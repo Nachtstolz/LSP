@@ -19,7 +19,7 @@ Linklist* GetNode(){
 */
 int pr;
 Linklist list[31];
-
+char file;
 /*
 void Sort(){
 
@@ -37,14 +37,25 @@ void Sort(){
 
 int main(void){
 	
+	printf("파일명(일차) : ");
+	scanf("%c", &file);
+	printf("출력 방식(알파벳 순서대로 : 1, 무작위 : 2) : ");
+	scanf("%d", &pr);
+	system("clear");
+
 	Linklist list[31];
 	FILE* fp_out;
 	memset(list, 0, sizeof(list));
 	
 	//int file = 1;
 	//char buffer [50000] = {0}; // 15(영단어) * (30*3)(한글뜻) * 30(단어 총 갯수)
+	char way1[10] = "./";
+	char way2[10] = {file};
+	char way3[10] = ".dic";
 
-	fp_out = fopen("./1.dic", "r");
+	strcat(way1, way2);
+	strcat(way1, way3);
+	fp_out = fopen(way1, "r");
 	
 	if(fp_out == NULL){
 		printf("Fail to open file");
@@ -60,8 +71,12 @@ int main(void){
 		//char buffer[1351];
 		if(fgets(buffer, sizeof(buffer), fp_out)== NULL) break;
 		
+		/*
 		char* n = strchr(buffer, '\n');
 		if(*n == '\n') *n = '\0';
+		*/
+
+		buffer[strlen(buffer)-1] = '\0';
 
 		token = strtok(buffer, " ");
 		while(token != NULL) {
@@ -92,7 +107,7 @@ int main(void){
 	fclose(fp_out);
 	
 	//여기부터는 1번 메뉴를 위한 코드
- 	pr = 1;
+ 	//pr = 1;
 	//알파벳 순서대로 / 임의의 순서대로
 	if(pr == 1) { //pr은 메인에서 넘어온 값
 		for(int j = 0; j < i; j++){ //list[0]에 저장된 값이 없고 밀려남. 왜?
@@ -144,7 +159,13 @@ int main(void){
 
 	double score = (double)corr/(double)(start-1) * 100; //start가 1부터 시작하므로 start => start-1로 변경
 	printf("당신의 점수는 %.2lf 점입니다.\n", score);
-	
+	getchar();
+
+	while(1) {
+		char enter = getchar();
+		if(enter == '\n') break;
+	}
+	system("clear");
 	//enter 입력하면 초기 메뉴로 넘어가는 부분 필요
 	return 0;
 

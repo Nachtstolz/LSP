@@ -22,36 +22,31 @@ int speed;
 int main(void){
 
 	//int num;
-
-	puts(">>영어 단어 암기 프로그램<<");
-	puts("1. 영어 단어 맞추기\t2. 플래쉬카드");
-	puts("3. 행맨(hangman)\t4. 단어장 관리");
-	puts("5. 프로그램 종료\n");
-	printf("번호를 선택하세요: "); scanf("%d", &num);
-	if(num == 1){
-		//int file;
-		//int pr;
-		printf("파일명(일차) : "); scanf("%d",&file);
-		printf("출력 방식(알파벳 순서대로 : 1, 무작위 : 2) : ");
-		scanf("%d",&pr);
-		fopen("./menu1.c", "r");
+	while(1) {
+		puts(">>영어 단어 암기 프로그램<<");
+		puts("1. 영어 단어 맞추기\t2. 플래쉬카드");
+		puts("3. 행맨(hangman)\t4. 단어장 관리");
+		puts("5. 프로그램 종료\n");
+		printf("번호를 선택하세요: "); scanf("%d", &num);
+		if(num == 1){
+			//int file;
+			//int pr;
+			system("./menu11");
+		}
+		else if (num == 2){
+			//int speed;
+			//int file;
+			//int pr;
+			system("./menu2");
+		}
+		else if (num == 3){
+			system("./menu3");
+		}
+		else if (num == 4){	
+			system("./menu4");
+		}
+		else if (num == 5){ break; }
 	}
-	else if (num == 2){
-		//int speed;
-		//int file;
-		//int pr;
-		printf("속도(초) : "); scanf("%d", &speed);
-		printf("파일명(일차) : "); scanf("%d", &file);
-		printf("출력 방식(알파벳 순서대로 : 1, 무작위 : 2) : ");
-		scanf("%d",&pr);
-	}
-	else if (num == 3){
-
-	}
-	else if (num == 4){
-
-	}
-	else if (num == 5){ return 0; }
 
 	return 0;
 }

@@ -10,19 +10,37 @@ typedef struct node {
 	char mean3[31];
 } Linklist;
 
-int sec;
-int file;
+int speed;
+char file;
 int pr;
 Linklist list[31];
 
-int main(void){
+int main(){
+	setbuf(stdout, NULL);
+
+	printf("속도(초) : ");
+	scanf("%d", &speed);
+	getchar();
+	printf("파일명(일차) : ");
+	scanf("%c", &file);
+	getchar();
+	printf("출력 방식(알파벳 순서대로 : 1, 무작위로 : 2) : ");
+	scanf("%d", &pr);
+	getchar();
+	system("clear");
 
 	Linklist list[31];
 	//fopen 및 fgets 또는 fscanf
 	FILE* fp_out;
 	memset(list, 0, sizeof(list));
 
-	fp_out = fopen("./1.dic", "r");
+	char way1[10] = "./";
+	char way2[10] = {file};
+	char way3[10] = ".dic";
+	strcat(way1, way2);
+	strcat(way1, way3);
+
+	fp_out = fopen(way1, "r");
 
 	if(fp_out == NULL){
 		printf("Fail to open file");
@@ -64,8 +82,7 @@ int main(void){
 	fclose(fp_out);
 	// 파일 내용 읽는 부분 끝
 
-	pr = 2; //임의로 지정
-	int time = sec * 1000;
+	//pr = 2; //임의로 지정
 	if(pr == 1) {
 		//sort 진행
 		for(int j = 0; j<i; j++){
@@ -75,7 +92,7 @@ int main(void){
 				list[dest] = tmp;
 			}
 		}
-		printf("정렬 완료");
+		//printf("정렬 완료");
 	}
 	else if (pr == 2){
 		//그냥 넘어가기
@@ -86,26 +103,25 @@ int main(void){
 	}
 */
 
-	puts(">>영어 단어 암기 프로그램 : 플래쉬카드 <<\n");
+	//puts(">>영어 단어 암기 프로그램 : 플래쉬카드 <<");
 	for(int start = 0; start<i; start++){ //list[1]부터 작성된 점 반영해야함..
-		printf("반복문 입구");
 		if(list[start].data == NULL){
-			printf("끝!");
 			break;
 			//메뉴(초기) 화면으로 돌아가려면 return을 해야할까 또는 해당 메뉴 파일을 열어야할까?
 		}
-		printf("시작!");
+		puts(">>영어 단어 암기 프로그램 : 플래쉬카드 <<\n");
 		printf("%s", list[start].data);
-		sleep(2000); // time 대신 2000을 임의로 넣음
+		sleep(speed); // speed 대신 2을 임의로 넣음
 		system("clear");
 
+		puts(">>영어 단어 암기 프로그램 : 플래쉬카드 <<\n");
 		printf("%s %s %s", list[start].mean1, list[start].mean2, list[start].mean3); // 뜻은 한 번에 세 개 다 보여주기
-		sleep(2000); // time 대신 2000을 임의로 넣음
+		sleep(speed); // speed 대신 2을 임의로 넣음
 		system("clear");
-
 	
 	}
-
+	
+	system("clear"); //하고 메뉴 창 오픈
 	return 0;
 
 }
