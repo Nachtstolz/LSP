@@ -163,7 +163,9 @@ int main(void){
 
 	while(1) {
 		char enter = getchar();
-		if(enter == '\n') break;
+		if(enter == '\n'){
+			break;
+		}
 	}
 	system("clear");
 	//enter 입력하면 초기 메뉴로 넘어가는 부분 필요
