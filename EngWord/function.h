@@ -30,6 +30,9 @@ void ConnectNode(Linklist** head, Word* new); //노드 다음으로 노드 연�
 void ConnectFile(Linklist** head, int num);
 void FileProcessing(Linklist** head, char name[]); //파일 열기 및 데이터 추출과 저장
 
+//Menu
+
+
 // 1번 메뉴
 
 

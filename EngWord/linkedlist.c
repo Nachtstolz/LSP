@@ -1,6 +1,6 @@
 #include "function.h"
 
-Filelist* f_list[100];
+Filelist f_list[100];
 
 Linklist* GetNode(){
 	Linklist* tmp;
@@ -49,14 +49,14 @@ void ConnectNode(Linklist** head, Word* new){
 }
 
 void ConnectFile(Linklist** head, int num) {
-	f_list[num]->link = head;
+	f_list[num].link = *head;
 	return;
 }
 
 void FileProcessing(Linklist** head,char name[]){
 
 	//Linklist* list[31] = {'\0'}; //Linklist 를 저장할 배열. 마지막에 리
-	f_list[atoi(name)]->file_num = atoi(name);
+	f_list[atoi(name)].file_num = atoi(name);
 	char buffer[128]; //한 줄씩 입력받을 버퍼
 	char *token; //공백을 단위로 나누기 위한 token
 	int sep; //공백을 단위로 나누기 위해 필요한 separator
@@ -108,9 +108,9 @@ void FileProcessing(Linklist** head,char name[]){
 		Word* new = InsertWord(new_eng, new_mean);
 
 		//printf("인서트 완료 %s %s", new_eng, new_mean[]); //디버깅
-		printf("new의 값들 %s %s %s %s", new->eng, new->means[0], new->means[1], new->means[2]); //디버깅
-		ConnectNode(&head, new);
-		if(count == 0) ConnectFile(&head, atoi(name));
+		//printf("new의 값들 %s %s %s %s", new->eng, new->means[0], new->means[1], new->means[2]); //디버깅
+		ConnectNode(head, new);
+		if(count == 0) ConnectFile(head, atoi(name));
 		count++;
 	}
 
@@ -123,15 +123,26 @@ void FileProcessing(Linklist** head,char name[]){
 
 }*/
 
+void Output(Linklist** head){
+	if(*head){
+		printf("%s %s\n", (*head)->dic->eng, (*head)->dic->means[0]);
+		Output(&(*head)->link);
+	}
+}
+
 int main(void){
 	//Linklist* list[31] = {'\0'};
 	//Filelist* f_list[100] = '\0';
-	char n[4] = "1";
-	//Linklist* list = FileProcessing(n);
+
+	char n[4] = "1"; //나중에 이 부분 적용해야
+	
 	Linklist* head = NULL;
-	FileProcessing(head, n);
+	FileProcessing(&head, n);
 	/*for(int i = 0; i<30; i++){
-		printf("%s %s %s %s", list[i].link->eng, list[i].link->means[0], list[i].link->means[1], list[i].link.means[2]);
+		printf("%s %s %s %s", f_list[1]->link->word.eng, f_list[1].link->means[0], f_list[1].link->means[1], f_list[1].link.means[2]);
 	}*/
+
+	Output(&head);
+
 	return 0;
 }
