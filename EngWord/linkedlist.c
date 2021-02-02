@@ -1,5 +1,7 @@
 #include "function.h"
 
+Filelist* f_list[100];
+
 Linklist* GetNode(){
 	Linklist* tmp;
 	tmp = (Linklist*)malloc(sizeof(Linklist));
@@ -15,9 +17,10 @@ Word* GetWord(){
 	return tmp;
 }
 
-Word* InsertWord(char eng[], char mean[]){
+Word* InsertWord(char eng[], char mean[][31]){
 	Word* tmp;
 	tmp = GetWord();
+	//Linklist* tmp2 = GetNode();
 	//tmp->eng = eng;
 	strcpy(tmp->eng, eng);
 	//tmp->means[0] = mean[0];
@@ -30,33 +33,41 @@ Word* InsertWord(char eng[], char mean[]){
 	return tmp;
 
 }
-void ConnectNode(Linklist* list, Word* new, int num){
+void ConnectNode(Linklist** head, Word* new){
 	
 	//Word* new;
 	//new = InsertWord(new, eng, means);
 
-	if(list->link == NULL) {		
+	if((*head) == NULL) {		
 		//Linklist* tmp = GetNode();
 		//tmp->link = new;
-		list->link = new;
+		*head = GetNode();
+		(*head)->dic = new;
 		return;
 	}
-	ConnectNode(list, new, num+1);
+	ConnectNode(&(*head)->link, new);
 }
 
-Linklist* FileProcessing(char name){
+void ConnectFile(Linklist** head, int num) {
+	f_list[num]->link = head;
+	return;
+}
 
-	Linklist* list[31] = {'\0'}; //Linklist 를 저장할 배열. 마지막에 리
+void FileProcessing(Linklist** head,char name[]){
+
+	//Linklist* list[31] = {'\0'}; //Linklist 를 저장할 배열. 마지막에 리
+	f_list[atoi(name)]->file_num = atoi(name);
 	char buffer[128]; //한 줄씩 입력받을 버퍼
 	char *token; //공백을 단위로 나누기 위한 token
 	int sep; //공백을 단위로 나누기 위해 필요한 separator
-	int count; //총 단어 개수 알기 위한 변수
+	int count = 0; //총 단어 개수 알기 위한 변수
 	char new_eng[16] = {0};
 	char new_mean[3][31] = {0};
 	FILE* fp_out;
 
 	char way1[8] = "./";
-	char way2[8] = {name}; //10 이후부터도 생각
+	char way2[8];
+	strcpy(way2, name); //10 이후부터도 생각
 	char way3[8] = ".dic";
 
 	strcat(way1, way2);
@@ -65,7 +76,7 @@ Linklist* FileProcessing(char name){
 
 	if(fp_out == NULL){
 		puts("Fail to open file");
-		return list;
+		return;
 	}
 
 	while(!feof(fp_out)){
@@ -95,22 +106,30 @@ Linklist* FileProcessing(char name){
 		}
 		printf("출력"); //디버깅
 		Word* new = InsertWord(new_eng, new_mean);
-		printf("인서트 완료 %s %s", new_eng, new_mean); //디버깅
+
+		//printf("인서트 완료 %s %s", new_eng, new_mean[]); //디버깅
 		printf("new의 값들 %s %s %s %s", new->eng, new->means[0], new->means[1], new->means[2]); //디버깅
-		int num = 0;
-		ConnectNode(list[count], new, num);
+		ConnectNode(&head, new);
+		if(count == 0) ConnectFile(&head, atoi(name));
 		count++;
 	}
 
 	fclose(fp_out);
-	return list;
+	return;
 
 }
 
+/*void FileArray(){
+
+}*/
+
 int main(void){
 	//Linklist* list[31] = {'\0'};
-	char n = '1';
-	Linklist* list = FileProcessing(n);
+	//Filelist* f_list[100] = '\0';
+	char n[4] = "1";
+	//Linklist* list = FileProcessing(n);
+	Linklist* head = NULL;
+	FileProcessing(head, n);
 	/*for(int i = 0; i<30; i++){
 		printf("%s %s %s %s", list[i].link->eng, list[i].link->means[0], list[i].link->means[1], list[i].link.means[2]);
 	}*/
