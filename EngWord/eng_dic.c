@@ -81,6 +81,9 @@ void FileProcessing(Linklist** head,char name[]){
 
 	while(!feof(fp_out)){
 		sep = 0; //separator턴
+		buffer[0] = '\0';
+		new_eng[0] = '\0'; new_mean[0][0] = '\0'; new_mean[1][0] = '\0'; new_mean[2][0] = '\0';
+
 		if(fgets(buffer, sizeof(buffer), fp_out) == NULL) break; //읽은 내용 없으면 break
 		buffer[strlen(buffer)-1] = '\0'; //맨 마지막에 저장되는 '\n'을 문장을 끝내는 의미로 변경
 		token = strtok(buffer," ");
@@ -121,7 +124,7 @@ void FileProcessing(Linklist** head,char name[]){
 
 void Output(Linklist** head){
 	if(*head){
-		printf("%s %s\n", (*head)->dic->eng, (*head)->dic->means[0]);
+		printf("%s %s %s %s\n", (*head)->dic->eng, (*head)->dic->means[0], (*head)->dic->means[1], (*head)->dic->means[2]);
 		Output(&(*head)->link);
 	}
 }
@@ -188,6 +191,7 @@ void first_func(Linklist* head, int file){
 	int total = 0;
 	puts(">> 영어 단어 암기 프로그램 : 영어 단어 맞추기 <<");
 	while(end){
+		//printf("%s %s %s", head->dic->eng, head->dic->means[0], head->dic->means[1]); //디버깅
 		end = first_output(&head);
 		scanf("%s", ans);
 		if(strcmp(ans, ".quit") == 0) break;
@@ -227,7 +231,8 @@ void first_main(Linklist* head){
 	scanf("%d", &pr);
 
 	FileProcessing(&head, file); //헤드 부분 밑에처럼 바꿀거 생각
-
+	//Output(&head);
+	//sleep(2);
 	if(pr == 1){
 		head = Sort(f_list[atoi(file)].link);
 	}
@@ -244,15 +249,16 @@ void first_main(Linklist* head){
 
 void second_func(Linklist* head, int second){
 	//system("clear");
+	setbuf(stdout, NULL);
 
 	while(head != NULL){
 		puts(">> 영어 단어 암기 프로그램 : 플래쉬카드 <<");
-		printf("\n\t\t%s", head->dic->eng);
+		printf("\n\n\n\n\t\t\t%s", head->dic->eng);
 		sleep(second);
 		system("clear");
 
 		puts(">> 영어 단어 암기 프로그램 : 플래쉬카드 <<");
-		printf("\n\t\t%s", head->dic->means[0]);
+		printf("\n\n\n\n\t\t\t%s", head->dic->means[0]);
 		if(strcmp(head->dic->means[1], "" )!= 0){
 			printf(" %s", head->dic->means[1]);
 			if(strcmp(head->dic->means[2], "") != 0){
@@ -296,24 +302,32 @@ void second_main(Linklist* head){
 Word* printRandom(Linklist* head){
 	srand(time(NULL));
 	int rnd = rand();
+
+	//FileProcessing에서 count 받아서 rand()%count 진행한 값만큼
+	//반복문을 돌려서 반복문만큼 head = head->link 진행할 예정
+
 	//char result[16] = head->dic->eng;
-	Word* result = head->dic;
+	/*Word* result = head->dic;
 
 	Linklist* now = head;
+	
 	for(int i = 2; now!= NULL; i++){
 		if(rnd%i == 0){
 			result = now->dic;
 			break;
 		}
 		now = now->link;
-	}
+	}*/
+
+
 	return result;
 }
 
 void third_func(Linklist* head){
+	//fflush(stdout);
 	Word* res = printRandom(head);
-	char hint[3][31] = {0};//res->means;
-	char ans[16] = {0};//res->eng;
+	char hint[3][31] = res->means;
+	char ans[16] = res->eng;
 	int length = strlen(ans);
 	char empty[16] = {0};
 
@@ -444,6 +458,7 @@ int main(void){
 		}
 		else if (num == 3){
 			// 3번 기능 함수로 넘어가기
+			third_main(head);
 		}
 		else if (num == 4){
 			// 4번 기능 함수로 넘어가기
