@@ -117,6 +117,7 @@ void FileProcessing(Linklist** head,char name[]){
 		count++;
 	}
 
+	f_list[atoi(name)].file_num = count; //수
 	fclose(fp_out);
 	return;
 
@@ -299,12 +300,16 @@ void second_main(Linklist* head){
 	//second_func(, second);
 }
 
-Word* printRandom(Linklist* head){
+Word* printRandom(Linklist* head, int file){
 	srand(time(NULL));
-	int rnd = rand();
 
 	//FileProcessing에서 count 받아서 rand()%count 진행한 값만큼
 	//반복문을 돌려서 반복문만큼 head = head->link 진행할 예정
+	int rnd = rand()%f_list[file].file_num;
+	for(int i = 0; i<rnd; i++){
+		head = head->link;
+	}
+	Word* result = head->dic;
 
 	//char result[16] = head->dic->eng;
 	/*Word* result = head->dic;
@@ -323,9 +328,9 @@ Word* printRandom(Linklist* head){
 	return result;
 }
 
-void third_func(Linklist* head){
+void third_func(Linklist* head, int file){
 	//fflush(stdout);
-	Word* res = printRandom(head);
+	Word* res = printRandom(head, file);
 	char hint[3][31] = res->means;
 	char ans[16] = res->eng;
 	int length = strlen(ans);
@@ -428,7 +433,7 @@ void third_main(Linklist* head){
 
 	FileProcessing(&head, file);
 	f_list[atoi(file)].link = head;
-	third_func(head);
+	third_func(head, atoi(file));
 
 	return;
 }
