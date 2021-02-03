@@ -34,7 +34,7 @@ Word* InsertWord(char eng[], char mean[][31]){
 
 }
 void ConnectNode(Linklist** head, Word* new){
-	
+
 	//Word* new;
 	//new = InsertWord(new, eng, means);
 
@@ -128,6 +128,23 @@ void Output(Linklist** head){
 
 Linklist* Sort(Linklist* head){
 	/*Linklist* n_head;
+	  Linklist* tmp = NULL;
+	  n_head = head;
+
+	  while(n_head->link != NULL){
+	  if(strcmp(n_head->dic->eng, n_head->link->dic->eng) > 0){
+	  tmp = n_head->link;
+	  n_head->link = n_head->link->link;
+	  tmp->link = n_head;
+	  continue;
+	  }
+	  n_head = n_head->link;
+	  }
+
+	  return n_head;
+	 */
+
+	Linklist* n_head;
 	Linklist* tmp = NULL;
 	n_head = head;
 
@@ -136,26 +153,12 @@ Linklist* Sort(Linklist* head){
 			tmp = n_head->link;
 			n_head->link = n_head->link->link;
 			tmp->link = n_head;
-			continue;
 		}
 		n_head = n_head->link;
 	}
-	
-	return n_head;
-	*/
 
-	Linklist* n_head;
-	Linklist* tmp = NULL;
-	n_head = head;
-	
-	while(n_head->link != NULL){
-			if(strcmp(n_head->dic->eng, n_head->link->dic->eng) > 0){
-				tmp = n_head->link;
-				n_head->link = n_head->link->link;
-				tmp->link = n_head;
-			}
-			n_head = n_head->link;
-	}
+	return head;
+
 }
 
 int first_output(Linklist** head){
@@ -165,7 +168,7 @@ int first_output(Linklist** head){
 		end = 0;
 		return end;
 	}
-
+	
 	printf("%s ", (*head)->dic->means[0]);
 	if(strcmp((*head)->dic->means[1], "") != 0){
 		printf("%s ", (*head)->dic->means[1]);
@@ -200,7 +203,7 @@ void first_func(Linklist* head, int file){
 		}
 		head = head->link;
 	}
-	
+
 	double score = (double)corr/(double)total * 100;
 	printf("당신의 점수는 %.2lf 점입니다.\n", score);
 	getchar();
@@ -215,14 +218,14 @@ void first_func(Linklist* head, int file){
 }
 
 void first_main(Linklist* head){
-	
+
 	char file[4];
 	int pr;
 	printf("파일명(일차) : ");
 	scanf("%s", file);
 	printf("출력 방식(알파벳 순서대로 : 1, 무작위 : 2) : ");
 	scanf("%d", &pr);
-	
+
 	FileProcessing(&head, file); //헤드 부분 밑에처럼 바꿀거 생각
 
 	if(pr == 1){
@@ -232,7 +235,7 @@ void first_main(Linklist* head){
 		//Random();
 		//무작위이기 때문에 어떻게 처리할지 생각중
 	}
-	
+
 	system("clear");
 	first_func(head, atoi(file));
 
@@ -240,7 +243,7 @@ void first_main(Linklist* head){
 }
 
 void second_func(Linklist* head, int second){
-	system("clear");
+	//system("clear");
 
 	while(head != NULL){
 		puts(">> 영어 단어 암기 프로그램 : 플래쉬카드 <<");
@@ -265,11 +268,11 @@ void second_func(Linklist* head, int second){
 }
 
 void second_main(Linklist* head){
-	
+
 	int second;
 	char file[4];
 	int pr;
-	
+
 	//Linklist* head = NULL;
 	printf("속도(초) : "); scanf("%d", &second);
 	printf("파일명(일차) : "); scanf("%s", file);
@@ -277,7 +280,7 @@ void second_main(Linklist* head){
 	scanf("%d", &pr);
 
 	FileProcessing(&head, file); //헤드 부분 밑에처럼 바꿀 거 생각
-	
+
 	if(pr == 1){
 		head = Sort(f_list[atoi(file)].link); 
 	}
@@ -285,8 +288,135 @@ void second_main(Linklist* head){
 		//Random()
 	}
 	//printf("%s 첫번째 영단어", head->dic->eng);
+	system("clear");
 	second_func(head, second);
 	//second_func(, second);
+}
+
+Word* printRandom(Linklist* head){
+	srand(time(NULL));
+	int rnd = rand();
+	//char result[16] = head->dic->eng;
+	Word* result = head->dic;
+
+	Linklist* now = head;
+	for(int i = 2; now!= NULL; i++){
+		if(rnd%i == 0){
+			result = now->dic;
+			break;
+		}
+		now = now->link;
+	}
+	return result;
+}
+
+void third_func(Linklist* head){
+	Word* res = printRandom(head);
+	char hint[3][31] = {0};//res->means;
+	char ans[16] = {0};//res->eng;
+	int length = strlen(ans);
+	char empty[16] = {0};
+
+	for(int i = 0; i<length; i++){
+		empty[i] = '_';
+	}
+
+	char header[31];
+	char bodyer[31];
+	char legser[31];
+
+	memset(header, ' ', sizeof(header));
+	memset(bodyer, ' ', sizeof(bodyer));
+	memset(legser, ' ', sizeof(legser));
+
+	int chance = 1;
+	char abc;
+	int fail = 0; 
+	int input = 0;
+	int circle = 1;
+	int success = 0;
+
+	while(circle){
+		puts(">> 영어 단어 암기 프로그램 : 행맨 <<");
+		printf("(힌트) %s", hint[0]);
+		if(strcmp(hint[1], "") != 0){
+			printf(" %s", hint[1]);
+			if(strcmp(hint[2], "") != 0){
+				printf(" %s", hint[2]);
+			}
+		}
+		printf("\n");
+
+		puts("-------------------------+");
+		printf("%s\n%s\n%s\n", header, bodyer, legser);
+
+		if(legser[26] == '\\') break;
+
+		puts("");
+		printf("%s\n", empty);
+		printf("%d번째 시도 : ", chance);
+		scanf("%c", &abc);
+
+		chance++;
+		for(int j = 0; j<length; j++){
+			if(ans[j] == abc){
+				empty[j] = abc;
+				input = 1;
+			}
+		}
+
+		//정답 맞췄을 경우
+		success = 0;
+
+		for(int j = 0; j<length; j++){
+			if(empty[j] != '_') success++;
+		}
+		if(success == length) circle = 0;
+
+		if(input == 0){
+			fail++;
+			switch(fail) {
+				case 1:
+					header[25] = 'O';
+					break;
+				case 2:
+					bodyer[25] = '|';
+					break;
+				case 3 :
+					bodyer[23] = '/';
+					break;
+				case 4 :
+					bodyer[27] = '\\';
+					break;
+				case 5 :
+					legser[24] = '/';
+					break;
+				case 6 :
+					legser[26] = '\\';
+			}
+		}
+		system("clear");
+	}
+	if(legser[26] != '\\'){
+		puts("\t##########################");
+		puts("\t### Congratulations!!! ###");
+		puts("\t##########################");
+	}
+
+	sleep(2);
+	return;
+}
+
+void third_main(Linklist* head){
+	char file[4];
+	printf("파일명(일차) : "); scanf("%s", file);
+	system("clear");
+
+	FileProcessing(&head, file);
+	f_list[atoi(file)].link = head;
+	third_func(head);
+
+	return;
 }
 
 int main(void){
@@ -298,7 +428,7 @@ int main(void){
 	Linklist* head = NULL;
 
 	while(1){
-		//Linklist* head = NULL;
+		head = NULL;
 		puts(">>영어 단어 암기 프로그램<<");
 		puts("1. 영어 단어 맞추기\t2. 플래쉬카드");
 		puts("3. 행맨(hangman)\t4. 단어장 관리");
