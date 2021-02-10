@@ -9,12 +9,13 @@
 #include <sys/stat.h>
 
 typedef struct node {
-	char route[255];
+	char route[256];
+	int period;
 	struct node* link;
 }Linklist;
 
 typedef struct array {
-	char dir[255];
+	char dir[256];
 	char node* link;
 }Diclist;
 
