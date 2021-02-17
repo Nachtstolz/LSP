@@ -37,8 +37,16 @@ void Addlog(LogDetail* lhead, char file[]){ //로그파일에 로그 추가
 	// 로그 파일에 해당 연결리스트를 작성하는 것은 돌아가서 진행하는 걸로.
 }
 
-void Editlog(LogDetail* lhead){ //로그파일에 로그 수정
-
+void Editlog(LogDetail* lhead){ //로그파일에 recover명령어로 인한 로그
+	if(lhead == NULL){
+		lhead = GetLog();
+		lhead->time = 0; //시간 스레드 사용해야. 임의로 0 설정.
+		lhead->name = file;
+		strcat(lhead->name, lhead->time);
+		lhead->descript = "getnerated";
+		return;
+	}
+	Editlog(lhead->link, file);
 }
 
 void Removelog(LogDetail* lhead, char file[]){ //로그파일에 로그 삭제
@@ -57,6 +65,7 @@ void Insertlog(LogDetail* lhead){
 	if(lhead == NULL){
 		return;
 	}
+	/*
 	char new[512];
 	char n_time[32];
 	n_time[0] = "[";
@@ -68,8 +77,10 @@ void Insertlog(LogDetail* lhead){
 	strcat(new, lhead->name);
 	strcat(new, " ");
 	strcat(new, lhead->descript);
+	*/
+	fprintf(logfile, "[%s] %s %s", lhead->time, lhead->name, lhead->descript);
 
-	fputs(new, logfile);
+	//fputs(new, logfile);
 	
 	Insertlog(lhead->link);
 }
@@ -175,6 +186,21 @@ Linklist* Remove(Linklist* head, LogDetail* lhead, char path[], char file[], cha
 	return head;
 }
 
+void Compare(Linklist* head, char path[], char file[], char option[][32]){ //compare 명령어에 대한 함수
+
+	struct stat file1_info;
+	struct stat file2_info;
+
+	file1_info.st_mtime
+
+}
+
+void List(Linklist* head){ //list 명령어에 대한 함수
+	if(head == NULL) return;
+	
+	printf("%s %s", head->route, head->period);
+	List(head->link);
+}
 
 void base_print(Linklist* head, char path[256], LogDetail* lhead){
 	char input[256];
@@ -230,10 +256,6 @@ void base_print(Linklist* head, char path[256], LogDetail* lhead){
 		//exit에 맞는 함수
 	}
 }
-
-
-
-
 
 
 int main(char argc, char *argv[]){
