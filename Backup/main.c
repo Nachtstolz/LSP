@@ -24,11 +24,13 @@ LogDetail* GetLog(){
 	return tmp;
 }
 
-void Addlog(LogDetail* lhead, char file[]){ //로그파일에 로그 추가
+void Addlog(LogDetail* lhead, char file[], tm* td){ //로그파일에 로그 추가
 	
 	if(lhead == NULL){
 		lhead = GetLog();
-		lhead->time = 0; //시간 스레드 이용해야. 임의로 0 설정.
+		int tmp_time[16];
+		sprintf(tmp_time, "%d%d%d%d%d%d", td->tm_year%100, td->tm_mon+1, td->tm_mday, td->tm_hour, td->tm_min, td->tm_sec);
+		lhead->time = tmp_time; //시간 스레드 이용해야. 임의로 0 설정.
 		lhead->name = file;
 		lhead->descript = "added";
 		return;
@@ -40,9 +42,11 @@ void Addlog(LogDetail* lhead, char file[]){ //로그파일에 로그 추가
 void Editlog(LogDetail* lhead){ //로그파일에 recover명령어로 인한 로그
 	if(lhead == NULL){
 		lhead = GetLog();
-		lhead->time = 0; //시간 스레드 사용해야. 임의로 0 설정.
+		int tmp_time[16];
+		sprintf(tmp_time, "%d%d%d%d%d%d", td->tm_year%100, td->tm_mon+1, td->tm_mday, td->tm_hour, td->tm_min, td->tm_sec);
+		lhead->time = tmp_time;
+		strcat(file, lhead->time);
 		lhead->name = file;
-		strcat(lhead->name, lhead->time);
 		lhead->descript = "getnerated";
 		return;
 	}
@@ -53,7 +57,9 @@ void Removelog(LogDetail* lhead, char file[]){ //로그파일에 로그 삭제
 	
 	if(lhead == NULL){
 		lhread = GetLog();
-		lhead->time = 0; //시간 스레드 이용해야. 임의로 0 설정.
+		int tmp_time[16];
+		sprintf(tmp_time, "%d%d%d%d%d%d", td->tm_year%100, td->tm_mon+1, td->tm_mday, td->tm_hour, td->tm_min, td->tm_sec);
+		lhead->time = tmp_time;
 		lhead->name = file;
 		lhead->descript = "deleted";
 		return;
@@ -94,12 +100,15 @@ int CheckFile(LogDetail* lhead, char cm_file[]){
 }
 
 Linklist* Add(Linkedlist* head, LogDetail* lhead, char path[], char file[], char option[][32]){
+	time_t tt;
+	tm *td;
 	int idx = 0;
 	FILE* fp;
 	struct stat f_info;
 	mode_t f_mode;
 	//LogDetail* put_log;
 
+	td = localtime(&tt);
 	if(strcmp(file, "\0") == 0){
 		puts("Fail to add command");
 		//basic 함수로 넘어가서 return 처리가 바로 될 수 있도록 조건 넣어줄 것
@@ -143,7 +152,7 @@ Linklist* Add(Linkedlist* head, LogDetail* lhead, char path[], char file[], char
 		
 		//logfile에 게시하는 작업
 		//함수로 넘겨서 진행할 것. 함수 명시해야.
-		Addlog(lhead, file);
+		Addlog(lhead, file, td);
 
 		//fputs(lhead, logflie);
 		// 연결리스트를 그대로 fputs하는 것이 불가능하기 때문에 넣는 함수를 임의로 만들어주는 방법 생각
@@ -188,10 +197,54 @@ Linklist* Remove(Linklist* head, LogDetail* lhead, char path[], char file[], cha
 
 void Compare(Linklist* head, char path[], char file[], char option[][32]){ //compare 명령어에 대한 함수
 
+	int comp1 = 0;
+	int comp2 = 0;
 	struct stat file1_info;
 	struct stat file2_info;
+	
+	//입력 인자가 2개가 아닌 경우
+	if(file == NULL || option == NULL){ //NULL로 안될 것 같아서 나중에 봐야
+		puts("Fail to compare command");
+	}
 
-	file1_info.st_mtime
+	//파일이 존재하지 않을 경우
+	if(fopen(file, "r") == NULL){
+		puts("Fail to compare command");
+	}
+	if(fopen(option[0], "r") == NULL){
+		puts("Fail to compare command");
+	}
+
+	//일반 파일이 아닐 경우
+	int f1_stat = stat(file, &file1_info);
+	int f2_stat = stat(option[0], &file2_info);
+	mode_t f1_mode = file1_info.st_mode;
+	mode_t f2_mode = file2_info.st_mode;
+
+	if(!S_ISREG(f1_mode)){
+		puts("Fail to compare command");
+	}
+	if(!S_ISREG(f2_mode)){
+		puts("Fail to compare command");
+	}
+
+	if(file1_info.st_mtime == file2_info.st_mtime){
+		comp1 = 1;
+	}
+
+	if(file1_info.st_size == file2_info.st_size){
+		comp2 = 1;
+	}
+
+	if(comp1 == 1 && comp2 == 1){
+		puts("File1 = File2");
+	}
+	else {
+		printf("File1 : mtime : %s, 파일 크기 : %lld bytes", file1_info.st_mtime, file1_info.st_size);
+		printf("File2 : mtime : %s, 파일 크기 : %lld bytes", file2_info.st_mtime, file2_info.st_size);
+	}
+
+	return;
 
 }
 
@@ -219,7 +272,17 @@ void base_print(Linklist* head, char path[256], LogDetail* lhead){
 			strcpy(oper, token);
 		}
 		else if(sep == 1){
-			strcpy(file, token);
+			char tmp[256];
+			strcpy(tmp, token);
+			if(strchr(tmp, '/') == NULL){
+				char *buf;
+				char buffer[256];
+				getcwd(buffer, sizeof(buffer));
+				sprintf(file, "%s%s", buffer, tmp);
+			//strcpy(file, token);
+			if(strchr(file, '\0') == NULL){
+				puts("Fail to input file_name");
+				return; //파일명 255 넘었을 경우 에러메세지
 		}
 		else if(sep == 2){
 			strcpy(option[0], token);
@@ -273,10 +336,10 @@ int main(char argc, char *argv[]){
 		logfile = fopen("./logfile", "w+");
 	}
 
-	if(strchr(argv, '/') == NULL){ //상대 경로의 경우 앞에 ./ 추가
-		char way1[8] = "./";
-		strcat(path, way1);
-		strcat(path, argv);
+	if(strchr(argv, '/') == NULL){ //상대 경로의 경우 현재 경로 앞에 추가
+		char way1[256];
+		getcwd(way1, sizeof(way1);
+		sprintf(path, "%s%s", way1, argv);
 	}
 
 	int dir_res = mkdir(path);

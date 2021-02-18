@@ -8,6 +8,7 @@
 #include <sys/type.h>
 #include <sys/stat.h>
 #include <ctype.h>
+#include <time.h>
 
 typedef struct logDetail{
 	char time[16]; //일단 시간을 문자열로 저장하고자 했음
@@ -27,5 +28,6 @@ typedef struct array {
 	char node* link;
 }Diclist;
 
+typedef struct tm tm;
 //Linkedlist 함수
 
