@@ -99,11 +99,27 @@ int CheckFile(LogDetail* lhead, char cm_file[]){
 	CheckFile(lhead->link, cm_file);
 }
 
+void Copy(char path[], char file[]){
+	FILE* ft = fopen(file, "r");
+	FILE* nf = fopen(); //파일명 지정 방법 찾아
+	while(1){
+		int c = getc(ft);
+		if(!feof(ft)){
+			fputc(c, nf);
+			fseek(ft, 1, SEEK_CUR);
+		}else break;
+	}
+	fclose(ft);
+	fclose(nf);
+
+	return;
+}
+
 Linklist* Add(Linkedlist* head, LogDetail* lhead, char path[], char file[], char option[][32]){
 	time_t tt;
 	tm *td;
 	int idx = 0;
-	FILE* fp;
+	//FILE* fp;
 	struct stat f_info;
 	mode_t f_mode;
 	//LogDetail* put_log;
@@ -125,6 +141,7 @@ Linklist* Add(Linkedlist* head, LogDetail* lhead, char path[], char file[], char
 		puts("Fail to open file");
 	}
 	// 백업해야할 파일이 백업리스트에 존재하는 지 확인 후 처리
+	//lhead -> head로 변경해서 진행해야할 것으로 판
 	if(CheckFile(lhead, file) == 1){
 		puts("Fail to open file");
 	}
@@ -136,9 +153,9 @@ Linklist* Add(Linkedlist* head, LogDetail* lhead, char path[], char file[], char
 	if(((float)atoi(option[0])) % 1.0 > 0){ 
 		puts("Fail to add command"); //PERIOD가 실수일 때
 	}
-
+야
 	do{
-		if(dic[idx] == NULL) break; //특정 인덱스의 값이 없다면 break
+		if(dic[idx] == NULL) break; //특정 인덱스의단 값이 없다면 break
 	}while(idx++)
 
 	dic[idx]->route = path;
@@ -149,6 +166,9 @@ Linklist* Add(Linkedlist* head, LogDetail* lhead, char path[], char file[], char
 		head->route = file;
 		head->period = atoi(option[0]);
 		head->link = NULL;
+		
+		//백업 진행
+		Copy(path, file); //파일을 복사하는 작업을 함수로
 		
 		//logfile에 게시하는 작업
 		//함수로 넘겨서 진행할 것. 함수 명시해야.
@@ -164,6 +184,21 @@ Linklist* Add(Linkedlist* head, LogDetail* lhead, char path[], char file[], char
 	
 
 	return head;
+}
+
+void Delete(char path[], char file[]){
+	// 디렉터리 즉, path 오픈
+	DIR *dir = NULL;
+	struct dirent *file = NULL;
+
+	dir = opendir(path);
+	while((file = readdir(dir)) != NULL){
+		if(file->d_name == ){ //file의 경로에 있는 파일명만 활용해서 같은지 확인
+			unlink(); //삭제할 대상이 될 파일경로
+		}
+	}
+
+	return;
 }
 
 Linklist* Remove(Linklist* head, LogDetail* lhead, char path[], char file[], char option[][32]){
@@ -186,6 +221,10 @@ Linklist* Remove(Linklist* head, LogDetail* lhead, char path[], char file[], cha
 		free(tmp);
 		//잘 작동하는지 확인할 필요 있음.
 
+		//백업 디렉토리에 영향을 미치는 함수
+		Delete(path, file);
+
+		//로그에 대한 함수들
 		Removelog(lhead, file);
 		Insertlog(lhead);
 	}
@@ -254,6 +293,22 @@ void List(Linklist* head){ //list 명령어에 대한 함수
 	printf("%s %s", head->route, head->period);
 	List(head->link);
 }
+
+void Ls(){ //argv를 사용하거나 함수에 들어오기 전 공백을 단위로 나누어서 인자 저장하는 방법으로 진행하기
+	DIR* dir = NULL;
+	struct dirent *file = NULL;
+	
+	char path[256];
+	gets(path)
+	dir = opendir(path);
+	
+	while(file = readdir(dir) != NULL){
+		//readdir 읽혀진 파일명 중 현재 디렉토리를 나타내는 . 도 포함되어있기에 무한 반복에 빠지지 않으려면 .과 ..일 경우 skip 해야한다고 함.
+		if(strcmp(file->d_name, "." == 0) || strcmp(file->d_name, ".." == 0)){
+			continue;
+		}
+
+		printf("%s ", file->d_name);
 
 void base_print(Linklist* head, char path[256], LogDetail* lhead){
 	char input[256];
@@ -326,7 +381,7 @@ int main(char argc, char *argv[]){
 	Linklist* head = NULL;
 	LogDetail* lhead = NULL;
 	Diclist* arr[32] = NULL;
-	int re = 0;
+	int re = 0; //전역으로 선언해야할 듯
 	char path[256];
 	struct stat dir_info;
 	mode_t dir_mode;
