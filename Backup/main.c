@@ -155,7 +155,7 @@ Linklist* Add(Linkedlist* head, LogDetail* lhead, char path[], char file[], char
 	}
 야
 	do{
-		if(dic[idx] == NULL) break; //특정 인덱스의단 값이 없다면 break
+		if(dic[idx] == NULL) break; //특정 인덱스의 값이 없다면 break
 	}while(idx++)
 
 	dic[idx]->route = path;
@@ -194,10 +194,10 @@ void Delete(char path[], char file[]){
 	dir = opendir(path);
 	while((file = readdir(dir)) != NULL){
 		if(file->d_name == ){ //file의 경로에 있는 파일명만 활용해서 같은지 확인
-			unlink(); //삭제할 대상이 될 파일경로
+			//파일 자체를 삭제하는 게 아니라 스레드 종료명령어 쓰기
 		}
 	}
-
+	
 	return;
 }
 
@@ -287,6 +287,31 @@ void Compare(Linklist* head, char path[], char file[], char option[][32]){ //com
 
 }
 
+int Rec_check(Linklist* head, char file[]){
+	if(head == NULL){
+		return 0; //백업파일이 없다는 것 의미
+	}
+
+	if(strcmp(head->route, file) == 0){
+		return 1;
+	}
+	Rec_check(head->link, file);
+}
+
+void Recover(Linklist* head, LogDetail* lhead, char file[], char path[]){
+
+	int ch = Rec_check(head, file); //백업 파일이 현재 백업 리스트에 존재하는 경우 확인. 백업 수행 종료를 진행해야 함.
+	if(ch == 1){ //변경할 파일이 현재 백업 리스트에 존재하는 경우
+		//백업 수행 종료 관련 명령문 작성 예정
+	}
+	if(fopen(file, "r") == NULL){//변경할 파일이 존재하지 않는 경우
+		puts("Fail to recover command");
+		return; //return 은 나중에 수정
+	}
+
+	return;
+}
+
 void List(Linklist* head){ //list 명령어에 대한 함수
 	if(head == NULL) return;
 	
@@ -294,7 +319,26 @@ void List(Linklist* head){ //list 명령어에 대한 함수
 	List(head->link);
 }
 
-void Ls(){ //argv를 사용하거나 함수에 들어오기 전 공백을 단위로 나누어서 인자 저장하는 방법으로 진행하기
+void Ls(char file[]){ //argv를 사용하거나 함수에 들어오기 전 공백을 단위로 나누어서 인자 저장하는 방법으로 진행하기
+	
+	char order[260];
+	char path[256];
+	char n_path[256];
+
+	if(strchr(file, '/') == NULL){
+		realpath(".", path); //현재 경로의 절대 경로 추출
+		sprintf(n_path, "%s%s", path, file);
+	}
+	else{
+		n_path = file;
+	}
+
+	sprintf(order, "%s %s", "ls", n_path);
+
+	system(order);
+	
+	return;
+/*
 	DIR* dir = NULL;
 	struct dirent *file = NULL;
 	
@@ -309,6 +353,29 @@ void Ls(){ //argv를 사용하거나 함수에 들어오기 전 공백을 단위
 		}
 
 		printf("%s ", file->d_name);
+*/
+
+}
+
+void Vi(char file[]){
+	
+	char order[260];
+	char path[256];
+	char n_path[256];
+	
+	if(strchr(file, '/') == NULL){
+		realpath(".", path);
+		sprintf(n_path, "%s%s", path, file); //절대경로로 변환
+	}
+	else{
+		n_path = file;
+	}
+	
+	sprintf(order, "%s %s", "vi", n_path); // vi + 절대경로
+	system(order);
+	
+	return;
+}
 
 void base_print(Linklist* head, char path[256], LogDetail* lhead){
 	char input[256];
@@ -365,9 +432,10 @@ void base_print(Linklist* head, char path[256], LogDetail* lhead){
 		//list와 맞는 함수
 	}
 	else if (strcmp(oper, "ls") == 0){
+		//oper 를 제외한 값들이 들어갈 것. file
 		//system("ls");
 	}
-	else if (strcmp(oper, "vi") == 0){
+	else if (strcmp(oper, "vi") == 0 || strcmp(oper, "vim") == 0){
 		//system("vi");
 	}
 	else if (strcmp(oper, "exit") == 0){
@@ -393,7 +461,7 @@ int main(char argc, char *argv[]){
 
 	if(strchr(argv, '/') == NULL){ //상대 경로의 경우 현재 경로 앞에 추가
 		char way1[256];
-		getcwd(way1, sizeof(way1);
+		getcwd(way1, sizeof(way1));
 		sprintf(path, "%s%s", way1, argv);
 	}
 
