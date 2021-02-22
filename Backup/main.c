@@ -115,6 +115,9 @@ void Copy(char path[], char file[]){
 	return;
 }
 
+void thr_func(Linkedlist* head){
+
+
 Linklist* Add(Linkedlist* head, LogDetail* lhead, char path[], char file[], char option[][32]){
 	time_t tt;
 	tm *td;
@@ -123,7 +126,11 @@ Linklist* Add(Linkedlist* head, LogDetail* lhead, char path[], char file[], char
 	struct stat f_info;
 	mode_t f_mode;
 	//LogDetail* put_log;
+	
+	//스레드 관련
+	int thr_id;
 
+	//thr_id = pthread_create(&pthread[], NULL, thr_func, 
 	td = localtime(&tt);
 	if(strcmp(file, "\0") == 0){
 		puts("Fail to add command");
@@ -167,6 +174,7 @@ Linklist* Add(Linkedlist* head, LogDetail* lhead, char path[], char file[], char
 		head->period = atoi(option[0]);
 		head->link = NULL;
 		
+		thr_id = pthread_create(&pthread[], NULL, thr_func, head);
 		//백업 진행
 		Copy(path, file); //파일을 복사하는 작업을 함수로
 		
@@ -298,6 +306,22 @@ int Rec_check(Linklist* head, char file[]){
 	Rec_check(head->link, file);
 }
 
+void Pring_log(LogDetail* lhead, char f_name[]){
+
+	int num = 0;
+	printf("%d. exit", num);
+	while(1){
+		if(lhead == NULL){
+			return;
+		}
+		
+		if(strcmp(f_name, lhead->name) == 0){
+			printf("%d. %s\t%s"); //로그 출력하지 않는 방법으로 찾아보기
+		}
+	}
+	
+}
+
 void Recover(Linklist* head, LogDetail* lhead, char file[], char path[]){
 
 	int ch = Rec_check(head, file); //백업 파일이 현재 백업 리스트에 존재하는 경우 확인. 백업 수행 종료를 진행해야 함.
@@ -308,6 +332,26 @@ void Recover(Linklist* head, LogDetail* lhead, char file[], char path[]){
 		puts("Fail to recover command");
 		return; //return 은 나중에 수정
 	}
+	
+	// 변경할 파일에 대한 백업 파일이 존재하지 않는 경우
+	DIR* dir = NULL;
+	struct dirent *dp = NULL;
+	int incl = 0;
+	char f_name[256] = strrchr(file, '/');
+	dir = opendir(path);
+	while((dp = readdir(dir)) != NULL){
+		if(dp->d_ino == 0) continue;
+		if(strcmp(dp->d_name, f_name) == 0){
+			incl = 1;
+			break;
+		}
+	}
+	if(incl == 0){
+		puts("Fail to recover command");
+		return; //return 부분 추후 수정
+	}
+
+	Print_log(lhead, f_name); //리스트 형태로 백업시간 기준 오름차순 출력 함수
 
 	return;
 }
@@ -321,10 +365,11 @@ void List(Linklist* head){ //list 명령어에 대한 함수
 
 void Ls(char file[]){ //argv를 사용하거나 함수에 들어오기 전 공백을 단위로 나누어서 인자 저장하는 방법으로 진행하기
 	
-	char order[260];
-	char path[256];
+	//char order[260];
+	//char path[256];
 	char n_path[256];
 
+	/*
 	if(strchr(file, '/') == NULL){
 		realpath(".", path); //현재 경로의 절대 경로 추출
 		sprintf(n_path, "%s%s", path, file);
@@ -332,7 +377,8 @@ void Ls(char file[]){ //argv를 사용하거나 함수에 들어오기 전 공�
 	else{
 		n_path = file;
 	}
-
+	*/
+	n_path = file;
 	sprintf(order, "%s %s", "ls", n_path);
 
 	system(order);
@@ -359,10 +405,10 @@ void Ls(char file[]){ //argv를 사용하거나 함수에 들어오기 전 공�
 
 void Vi(char file[]){
 	
-	char order[260];
-	char path[256];
+	//char order[260];
+	//char path[256];
 	char n_path[256];
-	
+	/*
 	if(strchr(file, '/') == NULL){
 		realpath(".", path);
 		sprintf(n_path, "%s%s", path, file); //절대경로로 변환
@@ -370,7 +416,9 @@ void Vi(char file[]){
 	else{
 		n_path = file;
 	}
-	
+	*/
+	n_path = file;
+
 	sprintf(order, "%s %s", "vi", n_path); // vi + 절대경로
 	system(order);
 	
@@ -443,9 +491,11 @@ void base_print(Linklist* head, char path[256], LogDetail* lhead){
 	}
 }
 
+pthread_t p_thread[32];
 
 int main(char argc, char *argv[]){
 	system("clear");
+	//pthread_t p_thread[32];
 	Linklist* head = NULL;
 	LogDetail* lhead = NULL;
 	Diclist* arr[32] = NULL;
