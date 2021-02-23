@@ -20,6 +20,7 @@ typedef struct logDetail{
 typedef struct node {
 	char route[256];
 	int period;
+	int t_id;
 	struct node* link;
 }Linklist;
 
@@ -29,5 +30,11 @@ typedef struct array {
 }Diclist;
 
 typedef struct tm tm;
+
+typedef struct thr_factor{
+	Linklist* head;
+	char path[256];
+	char file[256];
+}Factor;
 //Linkedlist 함수
 

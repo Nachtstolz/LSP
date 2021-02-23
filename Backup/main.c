@@ -100,6 +100,23 @@ int CheckFile(LogDetail* lhead, char cm_file[]){
 }
 
 void Copy(char path[], char file[]){
+	time_t tt;
+	tm* td;
+	
+	time(&tt);
+	td = localtime(&tt);
+	
+	char date[16];
+	char n_file[256];
+	int td_year = td->tm_year%100;
+	int td_mon = td->tm_mon+1;
+	int td_day = td->tm_mday;
+	int td_hour = td->tm_hour;
+	int td_min = td->tm_min;
+	int td_sec = td->tm_sec;
+
+	sprintf(date, "%d%d%d%d%d%d", td_year, td_mon, td_day, td_hour, td_min, td_sec);
+	sprintf(n_file, "%s_%s", file, date);
 	FILE* ft = fopen(file, "r");
 	FILE* nf = fopen(); //파일명 지정 방법 찾아
 	while(1){
@@ -115,10 +132,33 @@ void Copy(char path[], char file[]){
 	return;
 }
 
-void thr_func(Linkedlist* head){
+Factor* GetFactor(Linklist* head, char path[], char file[], char option[0]){
+	Factor *factor;
+	factor = (Factor*)malloc(sizeof(Factor));
+	factor->head = head;
+	factor->path = path;
+	factor->file = file;
+	factor->period = option;
+	
+	return factor;
+}
+
+void *thr_func(void* fac){
+	Factor* factor = (Factor*)fac;
+	Linklist* head = fac->head;
+	char path[256] = fac->path;
+	char file[256] = fac->file;
+	int period = head->period;
+
+	while(1){
+		Copy(path, file); //파일을 백업 디렉토리에 복사
+		sleep(period);
+	}
+
+}
 
 
-Linklist* Add(Linkedlist* head, LogDetail* lhead, char path[], char file[], char option[][32]){
+Linklist* Add(Linklist* head, LogDetail* lhead, char path[], char file[], char option[][32]){
 	time_t tt;
 	tm *td;
 	int idx = 0;
@@ -128,6 +168,7 @@ Linklist* Add(Linkedlist* head, LogDetail* lhead, char path[], char file[], char
 	//LogDetail* put_log;
 	
 	//스레드 관련
+	pthread_t p_thread;
 	int thr_id;
 
 	//thr_id = pthread_create(&pthread[], NULL, thr_func, 
@@ -174,9 +215,12 @@ Linklist* Add(Linkedlist* head, LogDetail* lhead, char path[], char file[], char
 		head->period = atoi(option[0]);
 		head->link = NULL;
 		
-		thr_id = pthread_create(&pthread[], NULL, thr_func, head);
+		Factor fac = GetFactor(head, path, file);
+		pthread_create(&pthread, NULL, thr_func, (void*)fac);
+		head->t_id = pthread;
+
 		//백업 진행
-		Copy(path, file); //파일을 복사하는 작업을 함수로
+		//Copy(path, file); //파일을 복사하는 작업을 함수로
 		
 		//logfile에 게시하는 작업
 		//함수로 넘겨서 진행할 것. 함수 명시해야.
@@ -190,7 +234,6 @@ Linklist* Add(Linkedlist* head, LogDetail* lhead, char path[], char file[], char
 	}
 	Add(head->link, lhead, path, file, option);
 	
-
 	return head;
 }
 
@@ -237,6 +280,7 @@ Linklist* Remove(Linklist* head, LogDetail* lhead, char path[], char file[], cha
 		Insertlog(lhead);
 	}
 
+	pthread_cancel(head->t_id);
 	Remove(head->link, lhead, path, file, option);
 
 	return head;
@@ -306,6 +350,7 @@ int Rec_check(Linklist* head, char file[]){
 	Rec_check(head->link, file);
 }
 
+/*
 void Pring_log(LogDetail* lhead, char f_name[]){
 
 	int num = 0;
@@ -321,9 +366,13 @@ void Pring_log(LogDetail* lhead, char f_name[]){
 	}
 	
 }
+*/
+
+void Print_number(){
+}
 
 void Recover(Linklist* head, LogDetail* lhead, char file[], char path[]){
-
+수
 	int ch = Rec_check(head, file); //백업 파일이 현재 백업 리스트에 존재하는 경우 확인. 백업 수행 종료를 진행해야 함.
 	if(ch == 1){ //변경할 파일이 현재 백업 리스트에 존재하는 경우
 		//백업 수행 종료 관련 명령문 작성 예정
@@ -341,7 +390,7 @@ void Recover(Linklist* head, LogDetail* lhead, char file[], char path[]){
 	dir = opendir(path);
 	while((dp = readdir(dir)) != NULL){
 		if(dp->d_ino == 0) continue;
-		if(strcmp(dp->d_name, f_name) == 0){
+		if(strstr(dp->d_name, f_name) != NULL){
 			incl = 1;
 			break;
 		}
@@ -351,7 +400,10 @@ void Recover(Linklist* head, LogDetail* lhead, char file[], char path[]){
 		return; //return 부분 추후 수정
 	}
 
-	Print_log(lhead, f_name); //리스트 형태로 백업시간 기준 오름차순 출력 함수
+	//Print_log(lhead, file);
+
+	Print_number(); //리스트를 보여주는 함
+	
 
 	return;
 }
@@ -491,7 +543,7 @@ void base_print(Linklist* head, char path[256], LogDetail* lhead){
 	}
 }
 
-pthread_t p_thread[32];
+//pthread_t p_thread[32];
 
 int main(char argc, char *argv[]){
 	system("clear");
