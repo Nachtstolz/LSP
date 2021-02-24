@@ -39,6 +39,14 @@ void Addlog(LogDetail* lhead, char file[], tm* td){ //로그파일에 로그 추
 	// 로그 파일에 해당 연결리스트를 작성하는 것은 돌아가서 진행하는 걸로.
 }
 
+void Addlog2(char file[]){ //스레드 함수 내에 쓰일 add로그
+	FILE* fp;
+	fp = fopen("./logfile", "a+");
+
+	char log[512];
+
+}
+
 void Editlog(LogDetail* lhead){ //로그파일에 recover명령어로 인한 로그
 	if(lhead == NULL){
 		lhead = GetLog();
@@ -272,15 +280,16 @@ Linklist* Remove(Linklist* head, LogDetail* lhead, char path[], char file[], cha
 		free(tmp);
 		//잘 작동하는지 확인할 필요 있음.
 
-		//백업 디렉토리에 영향을 미치는 함수
-		Delete(path, file);
+		//스레드에 영향을 미치는 함수
+		pthread_cancel(head->t_id);
+		//Delete(path, file);
 
 		//로그에 대한 함수들
 		Removelog(lhead, file);
 		Insertlog(lhead);
 	}
 
-	pthread_cancel(head->t_id);
+	//pthread_cancel(head->t_id); //이 부분을 Delete 함수 내에서 진행해보기
 	Remove(head->link, lhead, path, file, option);
 
 	return head;
@@ -368,7 +377,48 @@ void Pring_log(LogDetail* lhead, char f_name[]){
 }
 */
 
-void Print_number(){
+char[] Print_number(char path[], char file[]){
+
+	int numbering = 0;
+	DIR* dir = NULL;
+	struct dirent *dp = NULL;
+	struct stat fs;
+	char fp[256];
+	char ans[4];
+	char arr[256][256];
+
+	printf("%d. exit\n", numbering);
+	dir = opendir(path);
+	while((dp = readdir(dir)) != NULL){
+		if(strstr(dp->d_name, file) != NULL){
+			numbering++;
+			sprintf(fp, "%s/%s", path, dp->d_name);
+			if(stat(fp, &fs) == -1){continue;}
+			char byte[16] = fs.st_size;
+			char date[16] = strrchr(dp->d_name, '_');
+			sprintf(arr[numbering], "%d.%s", numbering, date);
+			printf("%d. %s\t%s\n", numbering, date, byte);
+		}
+	}
+	puts("Choose file to recover : ");
+	fgets(ans, sizeof(ans), stdin);
+
+	char str[8];
+	char n_date[16]
+	sprintf(str, "%s.", ans);
+	for(int i = 0; i<256; i++){
+		if(strstr(arr[i], str) != NULL){
+			n_date = strrchr(arr[i], '.');
+			break;
+		}
+	}
+
+	return n_date;
+
+}
+
+void R_Copy(char new_name[]){ //Recover 명령어를 통해서 파일을 백업하는 함
+
 }
 
 void Recover(Linklist* head, LogDetail* lhead, char file[], char path[]){
@@ -376,7 +426,7 @@ void Recover(Linklist* head, LogDetail* lhead, char file[], char path[]){
 	int ch = Rec_check(head, file); //백업 파일이 현재 백업 리스트에 존재하는 경우 확인. 백업 수행 종료를 진행해야 함.
 	if(ch == 1){ //변경할 파일이 현재 백업 리스트에 존재하는 경우
 		//백업 수행 종료 관련 명령문 작성 예정
-	}
+	}수
 	if(fopen(file, "r") == NULL){//변경할 파일이 존재하지 않는 경우
 		puts("Fail to recover command");
 		return; //return 은 나중에 수정
@@ -402,9 +452,16 @@ void Recover(Linklist* head, LogDetail* lhead, char file[], char path[]){
 
 	//Print_log(lhead, file);
 
-	Print_number(); //리스트를 보여주는 함
+	char n_date[16] = Print_number(path, f_name); //리스트를 보여주는 함수. 반환되는 문자열은 파일 뒤에 붙는 시간부분을 의미
+	if(strcpy(n_date, "exit") == 0){
+		//모든 실행중인 백업 중지 후 프로그램 종료
+	}
+	char new_name[256];
+	sprintf(new_name, "%s_%s", f_name, n_date);
+	if(strcpy(dp->d_name, new_name) == 0){
+		R_Copy(new_name);
+	}
 	
-
 	return;
 }
 
