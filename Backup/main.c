@@ -39,12 +39,33 @@ void Addlog(LogDetail* lhead, char file[], tm* td){ //로그파일에 로그 추
 	// 로그 파일에 해당 연결리스트를 작성하는 것은 돌아가서 진행하는 걸로.
 }
 
-void Addlog2(char file[]){ //스레드 함수 내에 쓰일 add로그
+void Addlog2(char file[], int start){ //스레드 함수 내에 쓰일 add로그
+	time_t tt;
+	tm* td;
+
 	FILE* fp;
 	fp = fopen("./logfile", "a+");
+	
+	time(&tt);
+	td = localtime(&tt);
+	int td_year = td->tm_year%100;
+	int td_mon = td->tm_mon+1;
+	int td_day = td->tm_mday;
+	int td_hour = td->tm_hour;
+	int td_min = td->tm_min;
+	int td_sec = td->tm_sec;
 
 	char log[512];
+	char edit_file[32];
+	if(start == 1){
+		sprintf(log, "[%s%s%s %s%s%s] %s %s", td_year, td_mon, td_day, td_hour, td_min, td_sec, file, "added");
+	}
+	else{
+		sprintf(edit_file, "%s%s%s%s%s%s", td_year, td_mon, td_day, td_hour, td_min, td_sec);
+		sprintf(log, "[%s%s%s %s%s%s] %s_%s %s", td_year, td_mon, td_day, td_hour, td_min, td_sec, file, edit_file, "generated");
+	}
 
+	return;
 }
 
 void Editlog(LogDetail* lhead){ //로그파일에 recover명령어로 인한 로그
@@ -55,7 +76,7 @@ void Editlog(LogDetail* lhead){ //로그파일에 recover명령어로 인한 로
 		lhead->time = tmp_time;
 		strcat(file, lhead->time);
 		lhead->name = file;
-		lhead->descript = "getnerated";
+		lhead->descript = "generated";
 		return;
 	}
 	Editlog(lhead->link, file);
@@ -75,6 +96,29 @@ void Removelog(LogDetail* lhead, char file[]){ //로그파일에 로그 삭제
 	Removelog(lhead->link, file);
 }
 
+void Removelog2(char file[]){
+	FILE* fp;
+	fopen("./logfile", "a+");
+
+	time_t tt;
+	tm* td;
+
+	time(&tt);
+	td = localtime(&tt);
+	
+	int td_year = td->tm_year%100;
+	int td_mon = td->tm_mon+1;
+	int td_day = td->tm_mday;
+	int td_hour = td->tm_hour;
+	int td_min = td->tm_min;
+	int td_sec = td->tm_sec;
+
+	char log[512];
+	sprintf(log, "[%s%s%s %s%s%s] %s %s", td_year, td_mon, td_day, td_hour, td_min, td_sec, file, "deleted");
+
+	return;
+}
+		
 void Insertlog(LogDetail* lhead){
 	if(lhead == NULL){
 		return;
@@ -151,17 +195,32 @@ Factor* GetFactor(Linklist* head, char path[], char file[], char option[0]){
 	return factor;
 }
 
+pthread_mutex_t mutex;
+
 void *thr_func(void* fac){
 	Factor* factor = (Factor*)fac;
 	Linklist* head = fac->head;
 	char path[256] = fac->path;
 	char file[256] = fac->file;
 	int period = head->period;
+	int start = 1;
+	Addlog2(file, start);
+	//Removelog2(file);
+
+	pthread_mutex_lock(&mutex);
 
 	while(1){
+		if(){ //스레드 종료 조건 넣어야
+			pthread_exit((void*)&result);
+			break;
+		}
 		Copy(path, file); //파일을 백업 디렉토리에 복사
 		sleep(period);
+		start++;
 	}
+	pthread_mutex_unlock;
+
+	return;
 
 }
 
@@ -174,9 +233,11 @@ Linklist* Add(Linklist* head, LogDetail* lhead, char path[], char file[], char o
 	struct stat f_info;
 	mode_t f_mode;
 	//LogDetail* put_log;
-	
+	int result;
+
 	//스레드 관련
 	pthread_t p_thread;
+	pthread_mutex_init(&mutex,NULL);
 	int thr_id;
 
 	//thr_id = pthread_create(&pthread[], NULL, thr_func, 
@@ -224,19 +285,21 @@ Linklist* Add(Linklist* head, LogDetail* lhead, char path[], char file[], char o
 		head->link = NULL;
 		
 		Factor fac = GetFactor(head, path, file);
-		pthread_create(&pthread, NULL, thr_func, (void*)fac);
 		head->t_id = pthread;
+		pthread_create(&pthread, NULL, thr_func, (void*)fac);
+		pthread_join(pthread, &result);
 
+		pthread_mutex_destroy(&mutex);
 		//백업 진행
 		//Copy(path, file); //파일을 복사하는 작업을 함수로
 		
 		//logfile에 게시하는 작업
 		//함수로 넘겨서 진행할 것. 함수 명시해야.
-		Addlog(lhead, file, td);
+		//Addlog(lhead, file, td);
 
 		//fputs(lhead, logflie);
 		// 연결리스트를 그대로 fputs하는 것이 불가능하기 때문에 넣는 함수를 임의로 만들어주는 방법 생각
-		Insertlog(lhead);
+		//Insertlog(lhead);
 
 		break;
 	}
@@ -417,8 +480,24 @@ char[] Print_number(char path[], char file[]){
 
 }
 
-void R_Copy(char new_name[]){ //Recover 명령어를 통해서 파일을 백업하는 함
+void R_Copy(char new_name[], char file[], char path){ //Recover 명령어를 통해서 파일을 백업하는 함수
+	FILE* fp;
+	FILE* nf;
+	char p[256];
+	sprintf(p, "%s%s", path, new_name);
+	fp = fopen(file, "w");
+	nf = fopen(p, "r");
+	while(1){
+		int c = getc(nf);
+		if(!feof(nf)){
+			fputc(c, fp);
+			fseek(nf, 1, SEEK_CUR);
+		} else break;
+		}
+	fclose(fp);
+	fclose(nf);
 
+	return;
 }
 
 void Recover(Linklist* head, LogDetail* lhead, char file[], char path[]){
@@ -455,11 +534,12 @@ void Recover(Linklist* head, LogDetail* lhead, char file[], char path[]){
 	char n_date[16] = Print_number(path, f_name); //리스트를 보여주는 함수. 반환되는 문자열은 파일 뒤에 붙는 시간부분을 의미
 	if(strcpy(n_date, "exit") == 0){
 		//모든 실행중인 백업 중지 후 프로그램 종료
+		pthread_exit();
 	}
 	char new_name[256];
 	sprintf(new_name, "%s_%s", f_name, n_date);
 	if(strcpy(dp->d_name, new_name) == 0){
-		R_Copy(new_name);
+		R_Copy(new_name, file, path);
 	}
 	
 	return;
