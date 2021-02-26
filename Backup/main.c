@@ -23,7 +23,7 @@ LogDetail* GetLog(){
 	tmp->link = NULL;
 	return tmp;
 }
-
+/*
 void Addlog(LogDetail* lhead, char file[], tm* td){ //로그파일에 로그 추가
 	
 	if(lhead == NULL){
@@ -38,7 +38,7 @@ void Addlog(LogDetail* lhead, char file[], tm* td){ //로그파일에 로그 추
 	Addlog(lhead->link, file);
 	// 로그 파일에 해당 연결리스트를 작성하는 것은 돌아가서 진행하는 걸로.
 }
-
+*/
 void Addlog2(char file[], int start){ //스레드 함수 내에 쓰일 add로그
 	time_t tt;
 	tm* td;
@@ -58,16 +58,17 @@ void Addlog2(char file[], int start){ //스레드 함수 내에 쓰일 add로그
 	char log[512];
 	char edit_file[32];
 	if(start == 1){
-		sprintf(log, "[%s%s%s %s%s%s] %s %s", td_year, td_mon, td_day, td_hour, td_min, td_sec, file, "added");
+		sprintf(log, "[%d%d%d %d%d%d] %s %s", td_year, td_mon, td_day, td_hour, td_min, td_sec, file, "added");
 	}
 	else{
-		sprintf(edit_file, "%s%s%s%s%s%s", td_year, td_mon, td_day, td_hour, td_min, td_sec);
-		sprintf(log, "[%s%s%s %s%s%s] %s_%s %s", td_year, td_mon, td_day, td_hour, td_min, td_sec, file, edit_file, "generated");
+		sprintf(edit_file, "%d%d%d%d%d%d", td_year, td_mon, td_day, td_hour, td_min, td_sec);
+		sprintf(log, "[%d%d%d %d%d%d] %s_%s %s", td_year, td_mon, td_day, td_hour, td_min, td_sec, file, edit_file, "generated");
 	}
 
 	return;
 }
 
+/*
 void Editlog(LogDetail* lhead){ //로그파일에 recover명령어로 인한 로그
 	if(lhead == NULL){
 		lhead = GetLog();
@@ -81,11 +82,13 @@ void Editlog(LogDetail* lhead){ //로그파일에 recover명령어로 인한 로
 	}
 	Editlog(lhead->link, file);
 }
+*/
 
+/*
 void Removelog(LogDetail* lhead, char file[]){ //로그파일에 로그 삭제
 	
 	if(lhead == NULL){
-		lhread = GetLog();
+		lhead = GetLog();
 		int tmp_time[16];
 		sprintf(tmp_time, "%d%d%d%d%d%d", td->tm_year%100, td->tm_mon+1, td->tm_mday, td->tm_hour, td->tm_min, td->tm_sec);
 		lhead->time = tmp_time;
@@ -95,6 +98,7 @@ void Removelog(LogDetail* lhead, char file[]){ //로그파일에 로그 삭제
 	}
 	Removelog(lhead->link, file);
 }
+*/
 
 void Removelog2(char file[]){
 	FILE* fp;
@@ -114,15 +118,15 @@ void Removelog2(char file[]){
 	int td_sec = td->tm_sec;
 
 	char log[512];
-	sprintf(log, "[%s%s%s %s%s%s] %s %s", td_year, td_mon, td_day, td_hour, td_min, td_sec, file, "deleted");
+	sprintf(log, "[%d%d%d %d%d%d] %s %s", td_year, td_mon, td_day, td_hour, td_min, td_sec, file, "deleted");
 
 	return;
 }
-		
+/*		
 void Insertlog(LogDetail* lhead){
 	if(lhead == NULL){
 		return;
-	}
+	}*/
 	/*
 	char new[512];
 	char n_time[32];
@@ -136,19 +140,20 @@ void Insertlog(LogDetail* lhead){
 	strcat(new, " ");
 	strcat(new, lhead->descript);
 	*/
+/*
 	fprintf(logfile, "[%s] %s %s", lhead->time, lhead->name, lhead->descript);
 
 	//fputs(new, logfile);
 	
 	Insertlog(lhead->link);
 }
-
-int CheckFile(LogDetail* lhead, char cm_file[]){
+*/
+int CheckFile(Linklist* head, char cm_file[]){
 	if(lhead == NULL){
 		return 1;
 	}
-	if(strcmp(lhead->file, cm_file) == 0) { return 0; }
-	CheckFile(lhead->link, cm_file);
+	if(strcmp(head->route, cm_file) == 0) { return 0; }
+	CheckFile(head->link, cm_file);
 }
 
 void Copy(char path[], char file[]){
@@ -160,6 +165,7 @@ void Copy(char path[], char file[]){
 	
 	char date[16];
 	char n_file[256];
+	char n_path[256];
 	int td_year = td->tm_year%100;
 	int td_mon = td->tm_mon+1;
 	int td_day = td->tm_mday;
@@ -169,8 +175,9 @@ void Copy(char path[], char file[]){
 
 	sprintf(date, "%d%d%d%d%d%d", td_year, td_mon, td_day, td_hour, td_min, td_sec);
 	sprintf(n_file, "%s_%s", file, date);
+	sprintf(n_path, "%s%s", path, n_file);
 	FILE* ft = fopen(file, "r");
-	FILE* nf = fopen(); //파일명 지정 방법 찾아
+	FILE* nf = fopen(n_path, "w"); //백업 디렉토리 내 파일명 지정
 	while(1){
 		int c = getc(ft);
 		if(!feof(ft)){
@@ -188,8 +195,8 @@ Factor* GetFactor(Linklist* head, char path[], char file[], char option[0]){
 	Factor *factor;
 	factor = (Factor*)malloc(sizeof(Factor));
 	factor->head = head;
-	factor->path = path;
-	factor->file = file;
+	strcpy(factor->path, path); //factor->path = path;
+	strcpy(factor->file, file); //factor->file = file;
 	factor->period = option;
 	
 	return factor;
@@ -210,15 +217,15 @@ void *thr_func(void* fac){
 	pthread_mutex_lock(&mutex);
 
 	while(1){
-		if(){ //스레드 종료 조건 넣어야
+		/*if(){ //스레드 종료 조건 넣어야
 			pthread_exit((void*)&result);
 			break;
-		}
+		}*/
 		Copy(path, file); //파일을 백업 디렉토리에 복사
 		sleep(period);
 		start++;
 	}
-	pthread_mutex_unlock;
+	pthread_mutex_unlock(&mutex);
 
 	return;
 
@@ -257,9 +264,10 @@ Linklist* Add(Linklist* head, LogDetail* lhead, char path[], char file[], char o
 	if(!S_ISREG(f_mode)){
 		puts("Fail to open file");
 	}
+
 	// 백업해야할 파일이 백업리스트에 존재하는 지 확인 후 처리
-	//lhead -> head로 변경해서 진행해야할 것으로 판
-	if(CheckFile(lhead, file) == 1){
+	//lhead -> head로 변경해서 진행해야할 것으로 판단
+	if(CheckFile(head, file) == 1){
 		puts("Fail to open file");
 	}
 
@@ -534,7 +542,12 @@ void Recover(Linklist* head, LogDetail* lhead, char file[], char path[]){
 	char n_date[16] = Print_number(path, f_name); //리스트를 보여주는 함수. 반환되는 문자열은 파일 뒤에 붙는 시간부분을 의미
 	if(strcpy(n_date, "exit") == 0){
 		//모든 실행중인 백업 중지 후 프로그램 종료
-		pthread_exit();
+		while(head != NULL){
+			pthread_cancel(head->t_id);
+			head = head->link;
+		}
+		return; //return 부분 수정해야
+		//pthread_exit();
 	}
 	char new_name[256];
 	sprintf(new_name, "%s_%s", f_name, n_date);
@@ -614,7 +627,18 @@ void Vi(char file[]){
 	return;
 }
 
-void base_print(Linklist* head, char path[256], LogDetail* lhead){
+void Exit(Linklist* head){
+
+	while(head != NULL){
+		pthread_cancel(head->t_id);
+		head = head->link;
+	}
+
+	return; //return 부분 나중에 첨삭
+}
+
+//path는 절대경로 상의 백업 딕셔너리 주소
+int base_print(Linklist* head, char path[256], LogDetail* lhead){
 	char input[256];
 	int sep = 0; //separator. 공백을 단위로 나누기 위함
 	char oper[8] = {0};
@@ -654,33 +678,42 @@ void base_print(Linklist* head, char path[256], LogDetail* lhead){
 	}
 
 	if(strcmp(oper, "add") == 0){
+		Add(head, lhead, path, file, option);
 		//add 명령어와 맞는 함수
 	}
 	else if (strcmp(oper, "remove") == 0){
+		Remove(head, lhead, path, file, option);
 		//remove 명령어와 맞는 함수
 	}
 	else if (strcmp(oper, "compare") == 0){
+		Compare(head, path, file, option);
 		//compare과 맞는 함수
 	}
 	else if (strcmp(oper, "recover") == 0){
+		Recover(head, lhead, file, path);
 		//recover과 맞는 함수
 	}
 	else if (strcmp(oper, "list") == 0){
+		List(head);
 		//list와 맞는 함수
 	}
 	else if (strcmp(oper, "ls") == 0){
 		//oper 를 제외한 값들이 들어갈 것. file
+		Ls(file);
 		//system("ls");
 	}
 	else if (strcmp(oper, "vi") == 0 || strcmp(oper, "vim") == 0){
+		Vi(file);
 		//system("vi");
 	}
 	else if (strcmp(oper, "exit") == 0){
+		Exit(head);
 		//exit에 맞는 함수
 	}
 }
 
 //pthread_t p_thread[32];
+int re = 0;
 
 int main(char argc, char *argv[]){
 	system("clear");
@@ -688,15 +721,17 @@ int main(char argc, char *argv[]){
 	Linklist* head = NULL;
 	LogDetail* lhead = NULL;
 	Diclist* arr[32] = NULL;
-	int re = 0; //전역으로 선언해야할 듯
+	//int re = 0; //전역으로 선언해야할 듯
+	re = 1;
 	char path[256];
 	struct stat dir_info;
 	mode_t dir_mode;
 	//FILE* logfile;
 
-	if(logfile = fopen("./logfile", "w+") == NULL){ //a+ or ra로 읽기도 동시에 할 수 있는지..
-		logfile = fopen("./logfile", "w+");
-	}
+	logfile = fopen("./logfile", "w+");
+	/*if(logfile == NULL){ //a+ or ra로 읽기도 동시에 할 수 있는지..
+		
+	}*/
 
 	if(strchr(argv, '/') == NULL){ //상대 경로의 경우 현재 경로 앞에 추가
 		char way1[256];
@@ -726,7 +761,7 @@ int main(char argc, char *argv[]){
 		return 0;
 	}
 	while(re){
-		base_print(head, path, lhead);
+		re = base_print(head, path, lhead);
 	}
 
 	return 0;

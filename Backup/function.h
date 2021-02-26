@@ -3,9 +3,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <dirent.h>
-#include <direct.h>
 #include <pthread.h>
-#include <sys/type.h>
 #include <sys/stat.h>
 #include <ctype.h>
 #include <time.h>
@@ -15,7 +13,7 @@ typedef struct logDetail{
 	char name[256]; //백업해야할 파일 이름
 	char descript[32]; //수행 내용
 	struct logDetail* link;
-}LogDetail
+}LogDetail;
 
 typedef struct node {
 	char route[256];
@@ -26,7 +24,7 @@ typedef struct node {
 
 typedef struct array {
 	char dir[256];
-	char node* link;
+	struct node* link;
 }Diclist;
 
 typedef struct tm tm;
