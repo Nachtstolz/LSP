@@ -149,7 +149,7 @@ void Insertlog(LogDetail* lhead){
 }
 */
 int CheckFile(Linklist* head, char cm_file[]){
-	if(lhead == NULL){
+	if(head == NULL){
 		return 1;
 	}
 	if(strcmp(head->route, cm_file) == 0) { return 0; }
@@ -191,13 +191,13 @@ void Copy(char path[], char file[]){
 	return;
 }
 
-Factor* GetFactor(Linklist* head, char path[], char file[], char option[0]){
+Factor* GetFactor(Linklist* head, char path[], char file[], char option[]){
 	Factor *factor;
 	factor = (Factor*)malloc(sizeof(Factor));
 	factor->head = head;
 	strcpy(factor->path, path); //factor->path = path;
 	strcpy(factor->file, file); //factor->file = file;
-	factor->period = option;
+	factor->period = atoi(option);
 	
 	return factor;
 }
@@ -205,7 +205,7 @@ Factor* GetFactor(Linklist* head, char path[], char file[], char option[0]){
 pthread_mutex_t mutex;
 
 void *thr_func(void* fac){
-	Factor* factor = (Factor*)fac;
+	Factor* factor = fac; //(Factor*)fac;
 	Linklist* head = fac->head;
 	char path[256] = fac->path;
 	char file[256] = fac->file;
@@ -272,30 +272,31 @@ Linklist* Add(Linklist* head, LogDetail* lhead, char path[], char file[], char o
 	}
 
 	//PERIOD 처리
-	if(strcmp(option[0], '\0') == 0){ //PERIOD 입력 없을 시
+	if(option[0][0] == '\0'){ //PERIOD 입력 없을 시
 		puts("Fail to add command");
 	}
-	if(((float)atoi(option[0])) % 1.0 > 0){ 
+	if((float)(atoi(option[0])) % 1.0 > 0){ 
 		puts("Fail to add command"); //PERIOD가 실수일 때
 	}
-야
-	do{
-		if(dic[idx] == NULL) break; //특정 인덱스의 값이 없다면 break
-	}while(idx++)
 
-	dic[idx]->route = path;
+	do{
+		if(strcmp(dic[idx], NULL) == 0) break; //특정 인덱스의 값이 없다면 break
+	}while(idx++);
+
+	//dic[idx]->dir = path;
+	strcpy(dic[idx]->dir, path);
 	dic[idx]->link = head;
 	
 	while(head == NULL){
 		head = GetNode();
-		head->route = file;
+		strcpy(head->route, file);//head->route = file;
 		head->period = atoi(option[0]);
 		head->link = NULL;
 		
-		Factor fac = GetFactor(head, path, file);
-		head->t_id = pthread;
+		Factor fac = GetFactor(head, path, file, option[0]);
+		head->t_id = p_thread;
 		pthread_create(&pthread, NULL, thr_func, (void*)fac);
-		pthread_join(pthread, &result);
+		pthread_join(pthread, result);
 
 		pthread_mutex_destroy(&mutex);
 		//백업 진행
@@ -501,7 +502,7 @@ void R_Copy(char new_name[], char file[], char path){ //Recover 명령어를 통
 			fputc(c, fp);
 			fseek(nf, 1, SEEK_CUR);
 		} else break;
-		}
+	}
 	fclose(fp);
 	fclose(nf);
 
@@ -513,7 +514,7 @@ void Recover(Linklist* head, LogDetail* lhead, char file[], char path[]){
 	int ch = Rec_check(head, file); //백업 파일이 현재 백업 리스트에 존재하는 경우 확인. 백업 수행 종료를 진행해야 함.
 	if(ch == 1){ //변경할 파일이 현재 백업 리스트에 존재하는 경우
 		//백업 수행 종료 관련 명령문 작성 예정
-	}수
+	}
 	if(fopen(file, "r") == NULL){//변경할 파일이 존재하지 않는 경우
 		puts("Fail to recover command");
 		return; //return 은 나중에 수정
@@ -554,7 +555,21 @@ void Recover(Linklist* head, LogDetail* lhead, char file[], char path[]){
 	if(strcpy(dp->d_name, new_name) == 0){
 		R_Copy(new_name, file, path);
 	}
-	
+	FILE* fp;
+	if(fp = fopen(file, "r") == NULL){
+		puts("Error to open file");
+		return;
+	}
+	while(1){
+		int c = getc(fp);
+		if(!feof(fp)){
+			printf("%c", fp);
+			fseek(fp, 1, SEEK_CUR);
+		}else break;
+	}
+
+	fclose(fp);
+
 	return;
 }
 
@@ -662,10 +677,12 @@ int base_print(Linklist* head, char path[256], LogDetail* lhead){
 				char buffer[256];
 				getcwd(buffer, sizeof(buffer));
 				sprintf(file, "%s%s", buffer, tmp);
+			}
 			//strcpy(file, token);
 			if(strchr(file, '\0') == NULL){
 				puts("Fail to input file_name");
 				return; //파일명 255 넘었을 경우 에러메세지
+			}
 		}
 		else if(sep == 2){
 			strcpy(option[0], token);
@@ -710,6 +727,7 @@ int base_print(Linklist* head, char path[256], LogDetail* lhead){
 		Exit(head);
 		//exit에 맞는 함수
 	}
+	return
 }
 
 //pthread_t p_thread[32];

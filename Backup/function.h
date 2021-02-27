@@ -33,6 +33,7 @@ typedef struct thr_factor{
 	Linklist* head;
 	char path[256];
 	char file[256];
+	int period;
 }Factor;
 //Linkedlist 함수
 
