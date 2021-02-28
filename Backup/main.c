@@ -232,7 +232,7 @@ void *thr_func(void* fac){
 }
 
 
-Linklist* Add(Linklist* head, LogDetail* lhead, char path[], char file[], char option[][32]){
+int Add(Linklist** head, LogDetail* lhead, char path[], char file[], char option[][32]){
 	time_t tt;
 	tm *td;
 	int idx = 0;
@@ -252,51 +252,56 @@ Linklist* Add(Linklist* head, LogDetail* lhead, char path[], char file[], char o
 	if(strcmp(file, "\0") == 0){
 		puts("Fail to add command");
 		//basic 함수로 넘어가서 return 처리가 바로 될 수 있도록 조건 넣어줄 것
-		return head;
+		return 1;
 	}
 	// 백업해야할 파일이 존재하지 않을 때 처리
 	if(fopen(file, "r") == NULL){
 		puts("Fail to add command");
+		return 1;
 	}
 	// 백업해야할 파일이 일반파일이 아닐 경우 처리
 	int f_stat = stat(file, &f_info);
 	f_mode = f_info.st_mode;
 	if(!S_ISREG(f_mode)){
 		puts("Fail to open file");
+		return 1;
 	}
 
 	// 백업해야할 파일이 백업리스트에 존재하는 지 확인 후 처리
 	//lhead -> head로 변경해서 진행해야할 것으로 판단
-	if(CheckFile(head, file) == 1){
+	if(CheckFile(*head, file) == 1){
 		puts("Fail to open file");
+		return 1;
 	}
 
 	//PERIOD 처리
 	if(option[0][0] == '\0'){ //PERIOD 입력 없을 시
 		puts("Fail to add command");
+		return 1;
 	}
-	if((float)(atoi(option[0])) % 1.0 > 0){ 
+	if((atof(option[0])) % 1.0 > 0){ 
 		puts("Fail to add command"); //PERIOD가 실수일 때
+		return 1;
 	}
 
 	do{
-		if(strcmp(dic[idx], NULL) == 0) break; //특정 인덱스의 값이 없다면 break
+		if(dic[idx] == '\0') break; //특정 인덱스의 값이 없다면 break
 	}while(idx++);
 
 	//dic[idx]->dir = path;
-	strcpy(dic[idx]->dir, path);
-	dic[idx]->link = head;
+	strcpy(dic[idx].dir, path);
+	dic[idx].link = *head;
 	
-	while(head == NULL){
-		head = GetNode();
-		strcpy(head->route, file);//head->route = file;
-		head->period = atoi(option[0]);
-		head->link = NULL;
+	while((*head) == NULL){
+		(*head) = GetNode();
+		strcpy((*head)->route, file);//*head->route = file;
+		(*head)->period = atoi(option[0]);
+		(*head)->link = NULL;
 		
-		Factor fac = GetFactor(head, path, file, option[0]);
-		head->t_id = p_thread;
-		pthread_create(&pthread, NULL, thr_func, (void*)fac);
-		pthread_join(pthread, result);
+		Factor* fac = GetFactor((*head), path, file, option[0]);
+		(*head)->t_id = p_thread;
+		pthread_create(&p_thread, NULL, thr_func, (void*)fac);
+		pthread_join(p_thread, result);
 
 		pthread_mutex_destroy(&mutex);
 		//백업 진행
@@ -309,62 +314,66 @@ Linklist* Add(Linklist* head, LogDetail* lhead, char path[], char file[], char o
 		//fputs(lhead, logflie);
 		// 연결리스트를 그대로 fputs하는 것이 불가능하기 때문에 넣는 함수를 임의로 만들어주는 방법 생각
 		//Insertlog(lhead);
-
 		break;
 	}
-	Add(head->link, lhead, path, file, option);
+	Add(&(*head)->link, lhead, path, file, option);
 	
-	return head;
+	return 1;
 }
 
+/*
 void Delete(char path[], char file[]){
 	// 디렉터리 즉, path 오픈
 	DIR *dir = NULL;
 	struct dirent *file = NULL;
 
+	char file2[256] = strrchr(file, '/');
 	dir = opendir(path);
 	while((file = readdir(dir)) != NULL){
-		if(file->d_name == ){ //file의 경로에 있는 파일명만 활용해서 같은지 확인
+		if(strcmp(file->d_name, file2) == 0){ //file의 경로에 있는 파일명만 활용해서 같은지 확인
 			//파일 자체를 삭제하는 게 아니라 스레드 종료명령어 쓰기
 		}
 	}
 	
 	return;
 }
+*/
 
-Linklist* Remove(Linklist* head, LogDetail* lhead, char path[], char file[], char option[][32]){
+int Remove(Linklist** head, LogDetail* lhead, char path[], char file[], char option[][32]){
 	//FILENAME 입력 없을 시
 	if(strcmp(file, "\0") == 0){
 		puts("Fail to remove command");
 		//basic 함수로 넘어가서 return 처리가 바로 될 수 있도록 조건 넣어줄 것
-		return head;
+		return 1;
 	}
 	//백업을 중단할 파일이 백업 리스트에 존재하지 않을 시(로그 파일)
-	if(CheckFile(lhead, file) == 1){
+	if(CheckFile((*head), file) == 1){
 		puts("Fail to remove command");
+		return 1;
 	}
 	
-	if(strcmp(head->link->route, file) == 0){
+	if(strcmp((*head)->link->route, file) == 0){
 		//head->link = head->link->link;
 		Linklist* tmp = NULL;
-		tmp = head->link;
-		head = tmp->link;
+		tmp = (*head)->link;
+		(*head) = tmp->link;
 		free(tmp);
 		//잘 작동하는지 확인할 필요 있음.
 
 		//스레드에 영향을 미치는 함수
-		pthread_cancel(head->t_id);
+		pthread_cancel((*head)->t_id);
 		//Delete(path, file);
 
 		//로그에 대한 함수들
-		Removelog(lhead, file);
-		Insertlog(lhead);
+		//Removelog(lhead, file);
+		//Insertlog(lhead);
+		Removelog2(file);
 	}
 
 	//pthread_cancel(head->t_id); //이 부분을 Delete 함수 내에서 진행해보기
-	Remove(head->link, lhead, path, file, option);
+	Remove((*head)->link, lhead, path, file, option);
 
-	return head;
+	return 1;
 }
 
 void Compare(Linklist* head, char path[], char file[], char option[][32]){ //compare 명령어에 대한 함수
@@ -377,14 +386,17 @@ void Compare(Linklist* head, char path[], char file[], char option[][32]){ //com
 	//입력 인자가 2개가 아닌 경우
 	if(file == NULL || option == NULL){ //NULL로 안될 것 같아서 나중에 봐야
 		puts("Fail to compare command");
+		return;
 	}
 
 	//파일이 존재하지 않을 경우
 	if(fopen(file, "r") == NULL){
 		puts("Fail to compare command");
+		return;
 	}
 	if(fopen(option[0], "r") == NULL){
 		puts("Fail to compare command");
+		return;
 	}
 
 	//일반 파일이 아닐 경우
@@ -395,9 +407,11 @@ void Compare(Linklist* head, char path[], char file[], char option[][32]){ //com
 
 	if(!S_ISREG(f1_mode)){
 		puts("Fail to compare command");
+		return;
 	}
 	if(!S_ISREG(f2_mode)){
 		puts("Fail to compare command");
+		return;
 	}
 
 	if(file1_info.st_mtime == file2_info.st_mtime){
@@ -412,8 +426,8 @@ void Compare(Linklist* head, char path[], char file[], char option[][32]){ //com
 		puts("File1 = File2");
 	}
 	else {
-		printf("File1 : mtime : %s, 파일 크기 : %lld bytes", file1_info.st_mtime, file1_info.st_size);
-		printf("File2 : mtime : %s, 파일 크기 : %lld bytes", file2_info.st_mtime, file2_info.st_size);
+		printf("File1 : mtime : %ld, 파일 크기 : %ld bytes", file1_info.st_mtime, file1_info.st_size);
+		printf("File2 : mtime : %ld, 파일 크기 : %ld bytes", file2_info.st_mtime, file2_info.st_size);
 	}
 
 	return;
@@ -449,7 +463,7 @@ void Pring_log(LogDetail* lhead, char f_name[]){
 }
 */
 
-char[] Print_number(char path[], char file[]){
+char* Print_number(char path[], char file[]){
 
 	int numbering = 0;
 	DIR* dir = NULL;
@@ -464,7 +478,7 @@ char[] Print_number(char path[], char file[]){
 	while((dp = readdir(dir)) != NULL){
 		if(strstr(dp->d_name, file) != NULL){
 			numbering++;
-			sprintf(fp, "%s/%s", path, dp->d_name);
+			sprintf(fp, "%s%s", path, dp->d_name);
 			if(stat(fp, &fs) == -1){continue;}
 			char byte[16] = fs.st_size;
 			char date[16] = strrchr(dp->d_name, '_');
@@ -489,7 +503,7 @@ char[] Print_number(char path[], char file[]){
 
 }
 
-void R_Copy(char new_name[], char file[], char path){ //Recover 명령어를 통해서 파일을 백업하는 함수
+void R_Copy(char new_name[], char file[], char path[]){ //Recover 명령어를 통해서 파일을 백업하는 함수
 	FILE* fp;
 	FILE* nf;
 	char p[256];
@@ -509,22 +523,23 @@ void R_Copy(char new_name[], char file[], char path){ //Recover 명령어를 통
 	return;
 }
 
-void Recover(Linklist* head, LogDetail* lhead, char file[], char path[]){
+int Recover(Linklist** head, LogDetail* lhead, char file[], char path[]){
 수
-	int ch = Rec_check(head, file); //백업 파일이 현재 백업 리스트에 존재하는 경우 확인. 백업 수행 종료를 진행해야 함.
+	int ch = Rec_check((*head), file); //백업 파일이 현재 백업 리스트에 존재하는 경우 확인. 백업 수행 종료를 진행해야 함.
 	if(ch == 1){ //변경할 파일이 현재 백업 리스트에 존재하는 경우
 		//백업 수행 종료 관련 명령문 작성 예정
+		pthread_cancel((*head)->t_id);
 	}
 	if(fopen(file, "r") == NULL){//변경할 파일이 존재하지 않는 경우
 		puts("Fail to recover command");
-		return; //return 은 나중에 수정
+		return 1; //return 은 나중에 수정
 	}
 	
 	// 변경할 파일에 대한 백업 파일이 존재하지 않는 경우
 	DIR* dir = NULL;
 	struct dirent *dp = NULL;
 	int incl = 0;
-	char f_name[256] = strrchr(file, '/');
+	char* f_name = strrchr(file, '/');
 	dir = opendir(path);
 	while((dp = readdir(dir)) != NULL){
 		if(dp->d_ino == 0) continue;
@@ -535,7 +550,7 @@ void Recover(Linklist* head, LogDetail* lhead, char file[], char path[]){
 	}
 	if(incl == 0){
 		puts("Fail to recover command");
-		return; //return 부분 추후 수정
+		return 1; //return 부분 추후 수정
 	}
 
 	//Print_log(lhead, file);
@@ -543,11 +558,11 @@ void Recover(Linklist* head, LogDetail* lhead, char file[], char path[]){
 	char n_date[16] = Print_number(path, f_name); //리스트를 보여주는 함수. 반환되는 문자열은 파일 뒤에 붙는 시간부분을 의미
 	if(strcpy(n_date, "exit") == 0){
 		//모든 실행중인 백업 중지 후 프로그램 종료
-		while(head != NULL){
-			pthread_cancel(head->t_id);
-			head = head->link;
+		while((*head) != NULL){
+			pthread_cancel((*head)->t_id);
+			(*head) = (*head)->link;
 		}
-		return; //return 부분 수정해야
+		return 0; //return 부분 수정해야
 		//pthread_exit();
 	}
 	char new_name[256];
@@ -556,27 +571,28 @@ void Recover(Linklist* head, LogDetail* lhead, char file[], char path[]){
 		R_Copy(new_name, file, path);
 	}
 	FILE* fp;
-	if(fp = fopen(file, "r") == NULL){
+	fp = fopen(file, "r");
+	if(fp == NULL){
 		puts("Error to open file");
-		return;
+		return 1;
 	}
 	while(1){
 		int c = getc(fp);
 		if(!feof(fp)){
-			printf("%c", fp);
+			printf("%c", c);
 			fseek(fp, 1, SEEK_CUR);
 		}else break;
 	}
 
 	fclose(fp);
 
-	return;
+	return 1;
 }
 
 void List(Linklist* head){ //list 명령어에 대한 함수
 	if(head == NULL) return;
 	
-	printf("%s %s", head->route, head->period);
+	printf("%s %d", head->route, head->period);
 	List(head->link);
 }
 
@@ -642,14 +658,14 @@ void Vi(char file[]){
 	return;
 }
 
-void Exit(Linklist* head){
+int Exit(Linklist** head){
 
-	while(head != NULL){
-		pthread_cancel(head->t_id);
-		head = head->link;
+	while((*head) != NULL){
+		pthread_cancel((*head)->t_id);
+		(*head) = (*head)->link;
 	}
 
-	return; //return 부분 나중에 첨삭
+	return 0; //return 부분 나중에 첨삭
 }
 
 //path는 절대경로 상의 백업 딕셔너리 주소
@@ -694,12 +710,15 @@ int base_print(Linklist* head, char path[256], LogDetail* lhead){
 		token = strtok(NULL, " ");
 	}
 
+	int re = 1;
 	if(strcmp(oper, "add") == 0){
-		Add(head, lhead, path, file, option);
+		re = Add(&head, lhead, path, file, option);
+		return re;
 		//add 명령어와 맞는 함수
 	}
 	else if (strcmp(oper, "remove") == 0){
-		Remove(head, lhead, path, file, option);
+		re = Remove(&head, lhead, path, file, option);
+		return re;
 		//remove 명령어와 맞는 함수
 	}
 	else if (strcmp(oper, "compare") == 0){
@@ -707,7 +726,8 @@ int base_print(Linklist* head, char path[256], LogDetail* lhead){
 		//compare과 맞는 함수
 	}
 	else if (strcmp(oper, "recover") == 0){
-		Recover(head, lhead, file, path);
+		re = Recover(&head, lhead, file, path);
+		return re;
 		//recover과 맞는 함수
 	}
 	else if (strcmp(oper, "list") == 0){
@@ -724,10 +744,11 @@ int base_print(Linklist* head, char path[256], LogDetail* lhead){
 		//system("vi");
 	}
 	else if (strcmp(oper, "exit") == 0){
-		Exit(head);
+		re = Exit(&head);
+		return re;
 		//exit에 맞는 함수
 	}
-	return
+	return re;
 }
 
 //pthread_t p_thread[32];
