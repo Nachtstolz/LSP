@@ -206,9 +206,9 @@ pthread_mutex_t mutex;
 
 void *thr_func(void* fac){
 	Factor* factor = fac; //(Factor*)fac;
-	Linklist* head = fac->head;
-	char path[256] = fac->path;
-	char file[256] = fac->file;
+	Linklist* head = factor->head;
+	char path[256] = factor->path;
+	char file[256] = factor->file;
 	int period = head->period;
 	int start = 1;
 	Addlog2(file, start);
@@ -226,8 +226,6 @@ void *thr_func(void* fac){
 		start++;
 	}
 	pthread_mutex_unlock(&mutex);
-
-	return;
 
 }
 
@@ -279,13 +277,13 @@ int Add(Linklist** head, LogDetail* lhead, char path[], char file[], char option
 		puts("Fail to add command");
 		return 1;
 	}
-	if((atof(option[0])) % 1.0 > 0){ 
+	if((atof(option[0])) % 1 > 0.0){ 
 		puts("Fail to add command"); //PERIOD가 실수일 때
 		return 1;
 	}
 
 	do{
-		if(dic[idx] == '\0') break; //특정 인덱스의 값이 없다면 break
+		if(dic[idx].dir == '\0') break; //특정 인덱스의 값이 없다면 break
 	}while(idx++);
 
 	//dic[idx]->dir = path;
@@ -301,7 +299,7 @@ int Add(Linklist** head, LogDetail* lhead, char path[], char file[], char option
 		Factor* fac = GetFactor((*head), path, file, option[0]);
 		(*head)->t_id = p_thread;
 		pthread_create(&p_thread, NULL, thr_func, (void*)fac);
-		pthread_join(p_thread, result);
+		pthread_join(p_thread, (void*)&result);
 
 		pthread_mutex_destroy(&mutex);
 		//백업 진행
@@ -371,7 +369,7 @@ int Remove(Linklist** head, LogDetail* lhead, char path[], char file[], char opt
 	}
 
 	//pthread_cancel(head->t_id); //이 부분을 Delete 함수 내에서 진행해보기
-	Remove((*head)->link, lhead, path, file, option);
+	Remove(&(*head)->link, lhead, path, file, option);
 
 	return 1;
 }
@@ -524,7 +522,7 @@ void R_Copy(char new_name[], char file[], char path[]){ //Recover 명령어를 �
 }
 
 int Recover(Linklist** head, LogDetail* lhead, char file[], char path[]){
-수
+
 	int ch = Rec_check((*head), file); //백업 파일이 현재 백업 리스트에 존재하는 경우 확인. 백업 수행 종료를 진행해야 함.
 	if(ch == 1){ //변경할 파일이 현재 백업 리스트에 존재하는 경우
 		//백업 수행 종료 관련 명령문 작성 예정
@@ -598,7 +596,7 @@ void List(Linklist* head){ //list 명령어에 대한 함수
 
 void Ls(char file[]){ //argv를 사용하거나 함수에 들어오기 전 공백을 단위로 나누어서 인자 저장하는 방법으로 진행하기
 	
-	//char order[260];
+	char order[260];
 	//char path[256];
 	char n_path[256];
 
@@ -611,7 +609,8 @@ void Ls(char file[]){ //argv를 사용하거나 함수에 들어오기 전 공�
 		n_path = file;
 	}
 	*/
-	n_path = file;
+	//n_path = file;
+	strcpy(n_path, file);
 	sprintf(order, "%s %s", "ls", n_path);
 
 	system(order);
@@ -638,7 +637,7 @@ void Ls(char file[]){ //argv를 사용하거나 함수에 들어오기 전 공�
 
 void Vi(char file[]){
 	
-	//char order[260];
+	char order[260];
 	//char path[256];
 	char n_path[256];
 	/*
@@ -650,8 +649,8 @@ void Vi(char file[]){
 		n_path = file;
 	}
 	*/
-	n_path = file;
-
+	//n_path = file;
+	strcpy(n_path, file);
 	sprintf(order, "%s %s", "vi", n_path); // vi + 절대경로
 	system(order);
 	
@@ -676,10 +675,10 @@ int base_print(Linklist* head, char path[256], LogDetail* lhead){
 	char file[256] = {0};
 	char option[2][32] = {0};
 
-	print("20193058> "); //기본 프롬프트 모양
+	printf("20193058> "); //기본 프롬프트 모양
 	fgets(input, sizeof(input), stdin); //fgets로 받는 것이 더 좋음
 	input[strlen(input) - 1] = '\0';
-	token = strtok(input, " ");
+	char* token = strtok(input, " ");
 
 	while(token != NULL){
 		if(sep == 0){
@@ -754,12 +753,12 @@ int base_print(Linklist* head, char path[256], LogDetail* lhead){
 //pthread_t p_thread[32];
 int re = 0;
 
-int main(char argc, char *argv[]){
+int main(char argc, char* argv[]){
 	system("clear");
 	//pthread_t p_thread[32];
 	Linklist* head = NULL;
 	LogDetail* lhead = NULL;
-	Diclist* arr[32] = NULL;
+	Diclist* arr[32];
 	//int re = 0; //전역으로 선언해야할 듯
 	re = 1;
 	char path[256];
@@ -772,13 +771,13 @@ int main(char argc, char *argv[]){
 		
 	}*/
 
-	if(strchr(argv, '/') == NULL){ //상대 경로의 경우 현재 경로 앞에 추가
+	if(strchr(argv[0], '/') == NULL){ //상대 경로의 경우 현재 경로 앞에 추가
 		char way1[256];
 		getcwd(way1, sizeof(way1));
-		sprintf(path, "%s%s", way1, argv);
+		sprintf(path, "%s%s", way1, argv[0]);
 	}
 
-	int dir_res = mkdir(path);
+	int dir_res = mkdir(path, 0775);
 	if(argc > 2){ //인자가 2개 이상
 		printf("Usage : %s", path);
 		return 0;
@@ -791,7 +790,7 @@ int main(char argc, char *argv[]){
 	}
 	
 	//접근권한
-	if(!S_IRWXU(dir_mode)){
+	if(dir_mode >= 0111){
 		printf("Usage : %s", path);
 	}
 
