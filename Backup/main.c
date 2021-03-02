@@ -205,10 +205,13 @@ Factor* GetFactor(Linklist* head, char path[], char file[], char option[]){
 pthread_mutex_t mutex;
 
 void *thr_func(void* fac){
-	Factor* factor = fac; //(Factor*)fac;
+	Factor* factor = (Factor *)fac; //(Factor*)fac;
 	Linklist* head = factor->head;
-	char path[256] = factor->path;
-	char file[256] = factor->file;
+	//char path[256] = factor->path;
+	//char file[256] = factor->file;
+	char path[256]; char file[256];
+	strcpy(path, factor->path);
+	strcpy(file, factor->file);
 	int period = head->period;
 	int start = 1;
 	Addlog2(file, start);
@@ -277,13 +280,15 @@ int Add(Linklist** head, LogDetail* lhead, char path[], char file[], char option
 		puts("Fail to add command");
 		return 1;
 	}
-	if((atof(option[0])) % 1 > 0.0){ 
+	if(fmod((atof(option[0])), 1.0) > 0.0){
 		puts("Fail to add command"); //PERIOD가 실수일 때
 		return 1;
 	}
 
 	do{
-		if(dic[idx].dir == '\0') break; //특정 인덱스의 값이 없다면 break
+		if(dic[idx].dir[0] == '\0'){
+			break; //특정 인덱스의 값이 없다면 break
+		}
 	}while(idx++);
 
 	//dic[idx]->dir = path;
@@ -478,8 +483,11 @@ char* Print_number(char path[], char file[]){
 			numbering++;
 			sprintf(fp, "%s%s", path, dp->d_name);
 			if(stat(fp, &fs) == -1){continue;}
-			char byte[16] = fs.st_size;
-			char date[16] = strrchr(dp->d_name, '_');
+			//char byte[16] = fs.st_size;
+			char byte[16];
+			//strcpy(byte, fs.st_size);
+			sprintf(byte, "%ld", fs.st_size);
+			char* date = strrchr(dp->d_name, '_');
 			sprintf(arr[numbering], "%d.%s", numbering, date);
 			printf("%d. %s\t%s\n", numbering, date, byte);
 		}
@@ -488,7 +496,7 @@ char* Print_number(char path[], char file[]){
 	fgets(ans, sizeof(ans), stdin);
 
 	char str[8];
-	char n_date[16]
+	char* n_date;	//char n_date[16];
 	sprintf(str, "%s.", ans);
 	for(int i = 0; i<256; i++){
 		if(strstr(arr[i], str) != NULL){
@@ -553,7 +561,8 @@ int Recover(Linklist** head, LogDetail* lhead, char file[], char path[]){
 
 	//Print_log(lhead, file);
 
-	char n_date[16] = Print_number(path, f_name); //리스트를 보여주는 함수. 반환되는 문자열은 파일 뒤에 붙는 시간부분을 의미
+	//char n_date[16]
+	char* n_date = Print_number(path, f_name); //리스트를 보여주는 함수. 반환되는 문자열은 파일 뒤에 붙는 시간부분을 의미
 	if(strcpy(n_date, "exit") == 0){
 		//모든 실행중인 백업 중지 후 프로그램 종료
 		while((*head) != NULL){
@@ -672,7 +681,7 @@ int base_print(Linklist* head, char path[256], LogDetail* lhead){
 	char input[256];
 	int sep = 0; //separator. 공백을 단위로 나누기 위함
 	char oper[8] = {0};
-	char file[256] = {0};
+	char file[512] = {0};
 	char option[2][32] = {0};
 
 	printf("20193058> "); //기본 프롬프트 모양
@@ -696,7 +705,7 @@ int base_print(Linklist* head, char path[256], LogDetail* lhead){
 			//strcpy(file, token);
 			if(strchr(file, '\0') == NULL){
 				puts("Fail to input file_name");
-				return; //파일명 255 넘었을 경우 에러메세지
+				return 1; //파일명 255 넘었을 경우 에러메세지
 			}
 		}
 		else if(sep == 2){
@@ -772,12 +781,16 @@ int main(char argc, char* argv[]){
 	}*/
 
 	if(strchr(argv[0], '/') == NULL){ //상대 경로의 경우 현재 경로 앞에 추가
-		char way1[256];
-		getcwd(way1, sizeof(way1));
-		sprintf(path, "%s%s", way1, argv[0]);
+		//char way1[256];
+		//getcwd(way1, sizeof(way1));
+		//sprintf(path, "%s%s", way1, argv[0]);
+		realpath(argv[0], path);
+		printf("%s\n%s\n", argv[0], path);
 	}
+	printf("%s\n%s\n", path, argv[0]);
 
 	int dir_res = mkdir(path, 0775);
+	//printf("%d", dir_res); 체크 용도
 	if(argc > 2){ //인자가 2개 이상
 		printf("Usage : %s", path);
 		return 0;
@@ -790,7 +803,7 @@ int main(char argc, char* argv[]){
 	}
 	
 	//접근권한
-	if(dir_mode >= 0111){
+	if(dir_mode >= 0001){
 		printf("Usage : %s", path);
 	}
 
