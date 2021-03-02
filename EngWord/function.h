@@ -5,6 +5,8 @@
 #include <string.h>
 #include <unistd.h>
 #include <time.h>
+#include <dirent.h>
+//#include <publib.h>
 
 typedef struct node{
 	struct word *dic;
@@ -21,6 +23,14 @@ typedef struct word{ //Linklist의 data로 들어갈 것
 	char eng[16];
 	char means[3][31];
 } Word; //단어 하나 - 뜻 3개를 가진 구조체
+
+/*struct dirent{
+	long d_ino;
+	off_t d_off;
+	unsigned short d_reclen;
+	char d_name[16];
+} //dirent 구조체
+*/
 
 // LinkedList 관련 함수
 Word* GetWord(); //연결리스트의 data에 들어갈 Word 구조체 생성
