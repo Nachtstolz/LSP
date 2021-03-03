@@ -148,12 +148,12 @@ void Insertlog(LogDetail* lhead){
 	Insertlog(lhead->link);
 }
 */
-int CheckFile(Linklist* head, char cm_file[]){
-	if(head == NULL){
+int CheckFile(Linklist** head, char cm_file[]){
+	if((*head) == NULL){
 		return 1;
 	}
-	if(strcmp(head->route, cm_file) == 0) { return 0; }
-	CheckFile(head->link, cm_file);
+	if(strcmp((*head)->route, cm_file) == 0) { return 0; }
+	CheckFile(&(*head)->link, cm_file);
 }
 
 void Copy(char path[], char file[]){
@@ -253,11 +253,14 @@ int Add(Linklist** head, LogDetail* lhead, char path[], char file[], char option
 	if(strcmp(file, "\0") == 0){
 		puts("Fail to add command");
 		//basic 함수로 넘어가서 return 처리가 바로 될 수 있도록 조건 넣어줄 것
+		printf("파일명 누락");
+		
 		return 1;
 	}
 	// 백업해야할 파일이 존재하지 않을 때 처리
 	if(fopen(file, "r") == NULL){
 		puts("Fail to add command");
+		//printf("%s 존재하지 않는 파일", file);
 		return 1;
 	}
 	// 백업해야할 파일이 일반파일이 아닐 경우 처리
@@ -265,23 +268,27 @@ int Add(Linklist** head, LogDetail* lhead, char path[], char file[], char option
 	f_mode = f_info.st_mode;
 	if(!S_ISREG(f_mode)){
 		puts("Fail to open file");
+		printf("백업해야할 파일이 일반 파일이 아님");
 		return 1;
 	}
 
 	// 백업해야할 파일이 백업리스트에 존재하는 지 확인 후 처리
 	//lhead -> head로 변경해서 진행해야할 것으로 판단
-	if(CheckFile(*head, file) == 1){
+	if(CheckFile(&(*head), file) == 1){
 		puts("Fail to open file");
+		printf("백업 리스트에 존재하는 파일");
 		return 1;
 	}
 
 	//PERIOD 처리
 	if(option[0][0] == '\0'){ //PERIOD 입력 없을 시
 		puts("Fail to add command");
+		printf("PERIOD 입력 없음");
 		return 1;
 	}
 	if(fmod((atof(option[0])), 1.0) > 0.0){
 		puts("Fail to add command"); //PERIOD가 실수일 때
+		printf("PERIOD가 실수");
 		return 1;
 	}
 
@@ -350,7 +357,8 @@ int Remove(Linklist** head, LogDetail* lhead, char path[], char file[], char opt
 		return 1;
 	}
 	//백업을 중단할 파일이 백업 리스트에 존재하지 않을 시(로그 파일)
-	if(CheckFile((*head), file) == 1){
+	if(CheckFile(&(*head), file) == 1){
+
 		puts("Fail to remove command");
 		return 1;
 	}
@@ -700,7 +708,7 @@ int base_print(Linklist* head, char path[256], LogDetail* lhead){
 				char *buf;
 				char buffer[256];
 				getcwd(buffer, sizeof(buffer));
-				sprintf(file, "%s%s", buffer, tmp);
+				sprintf(file, "%s/%s", buffer, tmp);
 			}
 			//strcpy(file, token);
 			if(strchr(file, '\0') == NULL){
@@ -780,19 +788,20 @@ int main(char argc, char* argv[]){
 		
 	}*/
 
-	if(strchr(argv[0], '/') == NULL){ //상대 경로의 경우 현재 경로 앞에 추가
+	if(strchr(argv[1], '/') == NULL){ //상대 경로의 경우 현재 경로 앞에 추가
 		//char way1[256];
 		//getcwd(way1, sizeof(way1));
 		//sprintf(path, "%s%s", way1, argv[0]);
-		realpath(argv[0], path);
-		printf("%s\n%s\n", argv[0], path);
+		realpath(argv[1], path);
+		//printf("%s\n%s\n", argv[1], path);
 	}
-	printf("%s\n%s\n", path, argv[0]);
+	//printf("%s\n%s\n", path, argv[1]);
 
-	int dir_res = mkdir(path, 0775);
+	int dir_res = mkdir(path, 775);
 	//printf("%d", dir_res); 체크 용도
 	if(argc > 2){ //인자가 2개 이상
 		printf("Usage : %s", path);
+		//printf("\n인자가 2개 이상");
 		return 0;
 	}
 
@@ -800,11 +809,17 @@ int main(char argc, char* argv[]){
 	dir_mode = dir_info.st_mode;
 	if(!S_ISDIR(dir_mode)){ //디렉토리 파일이 아니라면
 		printf("Usage : %s", path);
+		//printf("\n디렉토리 파일 아님");
+		return 0;
 	}
 	
 	//접근권한
-	if(dir_mode >= 0001){
+	//if(dir_mode >= 0001){
+	if(access(path, R_OK) != 0){
 		printf("Usage : %s", path);
+		//printf("\n%d", dir_mode);
+		//printf("\n접근 권한 잘못됨");
+		return 0;
 	}
 
 	if(dir_res != 0){
