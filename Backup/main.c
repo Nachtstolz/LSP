@@ -1,6 +1,5 @@
 #include "function.h"
 
-Diclist* dic = NULL;
 FILE* logfile;
 
 Linklist* GetNode(){
@@ -150,9 +149,9 @@ void Insertlog(LogDetail* lhead){
 */
 int CheckFile(Linklist** head, char cm_file[]){
 	if((*head) == NULL){
-		return 1;
+		return 0;
 	}
-	if(strcmp((*head)->route, cm_file) == 0) { return 0; }
+	if(strcmp((*head)->route, cm_file) == 0) { return 1; }
 	CheckFile(&(*head)->link, cm_file);
 }
 
@@ -253,7 +252,7 @@ int Add(Linklist** head, LogDetail* lhead, char path[], char file[], char option
 	if(strcmp(file, "\0") == 0){
 		puts("Fail to add command");
 		//basic 함수로 넘어가서 return 처리가 바로 될 수 있도록 조건 넣어줄 것
-		printf("파일명 누락");
+		//printf("파일명 누락");
 		
 		return 1;
 	}
@@ -268,7 +267,7 @@ int Add(Linklist** head, LogDetail* lhead, char path[], char file[], char option
 	f_mode = f_info.st_mode;
 	if(!S_ISREG(f_mode)){
 		puts("Fail to open file");
-		printf("백업해야할 파일이 일반 파일이 아님");
+		//printf("백업해야할 파일이 일반 파일이 아님");
 		return 1;
 	}
 
@@ -276,38 +275,32 @@ int Add(Linklist** head, LogDetail* lhead, char path[], char file[], char option
 	//lhead -> head로 변경해서 진행해야할 것으로 판단
 	if(CheckFile(&(*head), file) == 1){
 		puts("Fail to open file");
-		printf("백업 리스트에 존재하는 파일");
+		//printf("백업 리스트에 존재하는 파일");
 		return 1;
 	}
 
 	//PERIOD 처리
 	if(option[0][0] == '\0'){ //PERIOD 입력 없을 시
 		puts("Fail to add command");
-		printf("PERIOD 입력 없음");
+		//printf("PERIOD 입력 없음");
 		return 1;
 	}
 	if(fmod((atof(option[0])), 1.0) > 0.0){
 		puts("Fail to add command"); //PERIOD가 실수일 때
-		printf("PERIOD가 실수");
+		//printf("PERIOD가 실수");
 		return 1;
 	}
 
-	do{
-		if(dic[idx].dir[0] == '\0'){
-			break; //특정 인덱스의 값이 없다면 break
-		}
-	}while(idx++);
-
-	//dic[idx]->dir = path;
-	strcpy(dic[idx].dir, path);
-	dic[idx].link = *head;
+	fprintf(stderr, "1");
 	
+	fprintf(stderr, "2");
 	while((*head) == NULL){
 		(*head) = GetNode();
 		strcpy((*head)->route, file);//*head->route = file;
 		(*head)->period = atoi(option[0]);
 		(*head)->link = NULL;
 		
+		fprintf(stderr, "3\n");
 		Factor* fac = GetFactor((*head), path, file, option[0]);
 		(*head)->t_id = p_thread;
 		pthread_create(&p_thread, NULL, thr_func, (void*)fac);
@@ -326,6 +319,7 @@ int Add(Linklist** head, LogDetail* lhead, char path[], char file[], char option
 		//Insertlog(lhead);
 		break;
 	}
+	fprintf(stderr, "4\n");
 	Add(&(*head)->link, lhead, path, file, option);
 	
 	return 1;
@@ -437,8 +431,8 @@ void Compare(Linklist* head, char path[], char file[], char option[][32]){ //com
 		puts("File1 = File2");
 	}
 	else {
-		printf("File1 : mtime : %ld, 파일 크기 : %ld bytes", file1_info.st_mtime, file1_info.st_size);
-		printf("File2 : mtime : %ld, 파일 크기 : %ld bytes", file2_info.st_mtime, file2_info.st_size);
+		printf("File1 = mtime : %ld, 파일 크기 : %ld bytes\n", file1_info.st_mtime, file1_info.st_size);
+		printf("File2 = mtime : %ld, 파일 크기 : %ld bytes\n", file2_info.st_mtime, file2_info.st_size);
 	}
 
 	return;
@@ -769,13 +763,14 @@ int base_print(Linklist* head, char path[256], LogDetail* lhead){
 
 //pthread_t p_thread[32];
 int re = 0;
+int idx;
 
 int main(char argc, char* argv[]){
 	system("clear");
 	//pthread_t p_thread[32];
 	Linklist* head = NULL;
 	LogDetail* lhead = NULL;
-	Diclist* arr[32];
+	//Diclist arr[32];
 	//int re = 0; //전역으로 선언해야할 듯
 	re = 1;
 	char path[256];
@@ -822,10 +817,21 @@ int main(char argc, char* argv[]){
 		return 0;
 	}
 
+/*	
 	if(dir_res != 0){
 		printf("Fail to make directory");
 		return 0;
 	}
+*/
+	idx = 0;
+	while(1){
+		if(B_diclist[idx] == NULL){
+			strcpy(B_diclist[idx], path);
+			break;
+		}
+		idx++;
+	}
+
 	while(re){
 		re = base_print(head, path, lhead);
 	}

@@ -23,10 +23,12 @@ typedef struct node {
 	struct node* link;
 }Linklist;
 
-typedef struct array {
+/*typedef struct array {
 	char dir[256];
 	struct node* link;
-}Diclist;
+}Diclist;*/
+
+char B_diclist[256][256];
 
 typedef struct tm tm;
 
