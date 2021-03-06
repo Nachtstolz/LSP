@@ -155,16 +155,20 @@ int CheckFile(Linklist** head, char cm_file[]){
 	CheckFile(&(*head)->link, cm_file);
 }
 
+
+pthread_mutex_t mutex;
+
 void Copy(char path[], char file[]){
 	time_t tt;
 	tm* td;
 	
+	fprintf(stderr, "copy 함수 시작\n");
 	time(&tt);
 	td = localtime(&tt);
 	
 	char date[16];
 	char n_file[256];
-	char n_path[256];
+	char n_path[512];
 	int td_year = td->tm_year%100;
 	int td_mon = td->tm_mon+1;
 	int td_day = td->tm_mday;
@@ -172,11 +176,17 @@ void Copy(char path[], char file[]){
 	int td_min = td->tm_min;
 	int td_sec = td->tm_sec;
 
+	pthread_mutex_init(&mutex,NULL);
+
+	fprintf(stderr, "로그 파일에 쓰일 문자열 적기\n");
 	sprintf(date, "%d%d%d%d%d%d", td_year, td_mon, td_day, td_hour, td_min, td_sec);
 	sprintf(n_file, "%s_%s", file, date);
-	sprintf(n_path, "%s%s", path, n_file);
+	char* sep = strrchr(n_file, '/');
+	sprintf(n_path, "%s%s", path, sep);
+	fprintf(stderr, "%s\n", n_file);
+	fprintf(stderr, "%s\n", n_path);
 	FILE* ft = fopen(file, "r");
-	FILE* nf = fopen(n_path, "w"); //백업 디렉토리 내 파일명 지정
+	FILE* nf = fopen(n_path, "w+"); //백업 디렉토리 내 파일명 지정
 	while(1){
 		int c = getc(ft);
 		if(!feof(ft)){
@@ -216,18 +226,24 @@ void *thr_func(void* fac){
 	Addlog2(file, start);
 	//Removelog2(file);
 
-	pthread_mutex_lock(&mutex);
+	fprintf(stderr, "thread 함수 진행중\n");
+	//pthread_mutex_lock(&mutex);
 
 	while(1){
+		pthread_mutex_lock(&mutex);
 		/*if(){ //스레드 종료 조건 넣어야
 			pthread_exit((void*)&result);
 			break;
 		}*/
+		fprintf(stderr, "백업 진행 시작\n");
 		Copy(path, file); //파일을 백업 디렉토리에 복사
+		fprintf(stderr, "thread 함수 백업 진행 중\n");
 		sleep(period);
 		start++;
+
+		pthread_mutex_unlock(&mutex);
 	}
-	pthread_mutex_unlock(&mutex);
+	//pthread_mutex_unlock(&mutex);
 
 }
 
@@ -244,7 +260,7 @@ int Add(Linklist** head, LogDetail* lhead, char path[], char file[], char option
 
 	//스레드 관련
 	pthread_t p_thread;
-	pthread_mutex_init(&mutex,NULL);
+	//pthread_mutex_init(&mutex,NULL);
 	int thr_id;
 
 	//thr_id = pthread_create(&pthread[], NULL, thr_func, 
@@ -302,10 +318,16 @@ int Add(Linklist** head, LogDetail* lhead, char path[], char file[], char option
 		
 		fprintf(stderr, "3\n");
 		Factor* fac = GetFactor((*head), path, file, option[0]);
+		fprintf(stderr, "Factor 만들기 완료\n");
 		(*head)->t_id = p_thread;
+		fprintf(stderr, "thread 만들기 전\n");
 		pthread_create(&p_thread, NULL, thr_func, (void*)fac);
+		fprintf(stderr, "thread 만들기 완료\n");
+		
+		thr_func((void*)fac);
 		pthread_join(p_thread, (void*)&result);
 
+		//fprintf(
 		pthread_mutex_destroy(&mutex);
 		//백업 진행
 		//Copy(path, file); //파일을 복사하는 작업을 함수로
@@ -764,6 +786,8 @@ int base_print(Linklist* head, char path[256], LogDetail* lhead){
 //pthread_t p_thread[32];
 int re = 0;
 int idx;
+//char B_diclist[256][256];
+//memset(B_diclist, '\0', sizeof(B_diclist));
 
 int main(char argc, char* argv[]){
 	system("clear");
@@ -778,11 +802,12 @@ int main(char argc, char* argv[]){
 	mode_t dir_mode;
 	//FILE* logfile;
 
+	//fprintf(stderr, "what");
 	logfile = fopen("./logfile", "w+");
 	/*if(logfile == NULL){ //a+ or ra로 읽기도 동시에 할 수 있는지..
 		
 	}*/
-
+	//fprintf(stderr, "the");
 	if(strchr(argv[1], '/') == NULL){ //상대 경로의 경우 현재 경로 앞에 추가
 		//char way1[256];
 		//getcwd(way1, sizeof(way1));
@@ -792,14 +817,17 @@ int main(char argc, char* argv[]){
 	}
 	//printf("%s\n%s\n", path, argv[1]);
 
+	//fprintf(stderr, "problem");
+	//fprintf(stderr, "%s\n", path);
 	int dir_res = mkdir(path, 775);
-	//printf("%d", dir_res); 체크 용도
+	//printf("%d\n", dir_res); //체크 용도
 	if(argc > 2){ //인자가 2개 이상
 		printf("Usage : %s", path);
 		//printf("\n인자가 2개 이상");
 		return 0;
 	}
 
+	//fprintf(stderr, "here\n");
 	int re_stat = stat(path, &dir_info);
 	dir_mode = dir_info.st_mode;
 	if(!S_ISDIR(dir_mode)){ //디렉토리 파일이 아니라면
@@ -817,21 +845,29 @@ int main(char argc, char* argv[]){
 		return 0;
 	}
 
+	//fprintf(stderr, "here2\n");
 /*	
 	if(dir_res != 0){
 		printf("Fail to make directory");
 		return 0;
 	}
 */
+
+	/*
 	idx = 0;
 	while(1){
+		fprintf(stderr, "%d\n", idx);
 		if(B_diclist[idx] == NULL){
 			strcpy(B_diclist[idx], path);
+			fprintf(stderr, "%d\n", idx);
 			break;
 		}
 		idx++;
 	}
+	*/
+	strcpy(P, path);
 
+	//fprintf(stderr, "here3\n");
 	while(re){
 		re = base_print(head, path, lhead);
 	}

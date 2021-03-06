@@ -28,7 +28,7 @@ typedef struct node {
 	struct node* link;
 }Diclist;*/
 
-char B_diclist[256][256];
+char P[256];
 
 typedef struct tm tm;
 
