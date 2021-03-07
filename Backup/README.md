@@ -884,7 +884,7 @@
 ### 1. 뮤텍스
 
 - 뮤텍스 초기화의 두 가지 방법 :
-	* mutex 선언고 동시에 초기화 = `PTHREAD_MUTX_INITIALIZER` 사용하기.
+	* mutex 선언과 동시에 초기화 = `PTHREAD_MUTX_INITIALIZER` 사용하기.
 	* `pthread_mutex_init` 사용하기.
 
 ## 구현
