@@ -155,8 +155,11 @@ int CheckFile(Linklist** head, char cm_file[]){
 	CheckFile(&(*head)->link, cm_file);
 }
 
+pthread_t p_thread;
+int result;
 
-pthread_mutex_t mutex;
+pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+//pthread_mutex_init(&mutex, NULL);
 
 void Copy(char path[], char file[]){
 	time_t tt;
@@ -176,17 +179,19 @@ void Copy(char path[], char file[]){
 	int td_min = td->tm_min;
 	int td_sec = td->tm_sec;
 
-	pthread_mutex_init(&mutex,NULL);
+	//pthread_mutex_init(&mutex,NULL);
 
-	fprintf(stderr, "로그 파일에 쓰일 문자열 적기\n");
+	//fprintf(stderr, "로그 파일에 쓰일 문자열 적기\n");
 	sprintf(date, "%d%d%d%d%d%d", td_year, td_mon, td_day, td_hour, td_min, td_sec);
 	sprintf(n_file, "%s_%s", file, date);
 	char* sep = strrchr(n_file, '/');
 	sprintf(n_path, "%s%s", path, sep);
-	fprintf(stderr, "%s\n", n_file);
-	fprintf(stderr, "%s\n", n_path);
+	//fprintf(stderr, "%s\n", n_file);
+	//fprintf(stderr, "%s\n", n_path);
+	//fprintf(stderr, "%s\n", file);
 	FILE* ft = fopen(file, "r");
 	FILE* nf = fopen(n_path, "w+"); //백업 디렉토리 내 파일명 지정
+	//fprintf(stderr, "파일 부르기 성공\n");
 	while(1){
 		int c = getc(ft);
 		if(!feof(ft)){
@@ -211,7 +216,7 @@ Factor* GetFactor(Linklist* head, char path[], char file[], char option[]){
 	return factor;
 }
 
-pthread_mutex_t mutex;
+//pthread_mutex_t mutex;
 
 void *thr_func(void* fac){
 	Factor* factor = (Factor *)fac; //(Factor*)fac;
@@ -226,7 +231,7 @@ void *thr_func(void* fac){
 	Addlog2(file, start);
 	//Removelog2(file);
 
-	fprintf(stderr, "thread 함수 진행중\n");
+	//fprintf(stderr, "thread 함수 진행중\n");
 	//pthread_mutex_lock(&mutex);
 
 	while(1){
@@ -235,9 +240,9 @@ void *thr_func(void* fac){
 			pthread_exit((void*)&result);
 			break;
 		}*/
-		fprintf(stderr, "백업 진행 시작\n");
+		//fprintf(stderr, "백업 진행 시작\n");
 		Copy(path, file); //파일을 백업 디렉토리에 복사
-		fprintf(stderr, "thread 함수 백업 진행 중\n");
+		//fprintf(stderr, "thread 함수 백업 진행 중\n");
 		sleep(period);
 		start++;
 
@@ -256,10 +261,10 @@ int Add(Linklist** head, LogDetail* lhead, char path[], char file[], char option
 	struct stat f_info;
 	mode_t f_mode;
 	//LogDetail* put_log;
-	int result;
+	//int result;
 
 	//스레드 관련
-	pthread_t p_thread;
+	//pthread_t p_thread;
 	//pthread_mutex_init(&mutex,NULL);
 	int thr_id;
 
@@ -307,28 +312,28 @@ int Add(Linklist** head, LogDetail* lhead, char path[], char file[], char option
 		return 1;
 	}
 
-	fprintf(stderr, "1");
+	//fprintf(stderr, "1");
 	
-	fprintf(stderr, "2");
+	//fprintf(stderr, "2");
 	while((*head) == NULL){
 		(*head) = GetNode();
 		strcpy((*head)->route, file);//*head->route = file;
 		(*head)->period = atoi(option[0]);
 		(*head)->link = NULL;
 		
-		fprintf(stderr, "3\n");
+		//fprintf(stderr, "3\n");
 		Factor* fac = GetFactor((*head), path, file, option[0]);
-		fprintf(stderr, "Factor 만들기 완료\n");
+		//fprintf(stderr, "Factor 만들기 완료\n");
 		(*head)->t_id = p_thread;
-		fprintf(stderr, "thread 만들기 전\n");
+		//fprintf(stderr, "thread 만들기 전\n");
 		pthread_create(&p_thread, NULL, thr_func, (void*)fac);
-		fprintf(stderr, "thread 만들기 완료\n");
+		//fprintf(stderr, "thread 만들기 완료\n");
 		
 		thr_func((void*)fac);
 		pthread_join(p_thread, (void*)&result);
 
 		//fprintf(
-		pthread_mutex_destroy(&mutex);
+		//pthread_mutex_destroy(&mutex);
 		//백업 진행
 		//Copy(path, file); //파일을 복사하는 작업을 함수로
 		
@@ -341,7 +346,7 @@ int Add(Linklist** head, LogDetail* lhead, char path[], char file[], char option
 		//Insertlog(lhead);
 		break;
 	}
-	fprintf(stderr, "4\n");
+	//fprintf(stderr, "4\n");
 	Add(&(*head)->link, lhead, path, file, option);
 	
 	return 1;
@@ -623,7 +628,7 @@ int Recover(Linklist** head, LogDetail* lhead, char file[], char path[]){
 void List(Linklist* head){ //list 명령어에 대한 함수
 	if(head == NULL) return;
 	
-	printf("%s %d", head->route, head->period);
+	printf("%s\t%d", head->route, head->period);
 	List(head->link);
 }
 
@@ -745,6 +750,7 @@ int base_print(Linklist* head, char path[256], LogDetail* lhead){
 	int re = 1;
 	if(strcmp(oper, "add") == 0){
 		re = Add(&head, lhead, path, file, option);
+		//pthread_join(p_thread, (void*)&result);
 		return re;
 		//add 명령어와 맞는 함수
 	}
@@ -819,7 +825,7 @@ int main(char argc, char* argv[]){
 
 	//fprintf(stderr, "problem");
 	//fprintf(stderr, "%s\n", path);
-	int dir_res = mkdir(path, 775);
+	int dir_res = mkdir(path, 0775);
 	//printf("%d\n", dir_res); //체크 용도
 	if(argc > 2){ //인자가 2개 이상
 		printf("Usage : %s", path);
@@ -870,6 +876,11 @@ int main(char argc, char* argv[]){
 	//fprintf(stderr, "here3\n");
 	while(re){
 		re = base_print(head, path, lhead);
+		/*
+		if(re == 2){
+			pthread_join(p_thread, (void*)&result);
+		}
+		*/
 	}
 
 	return 0;
