@@ -1,6 +1,12 @@
 #include "function.h"
 
 FILE* logfile;
+int re = 0;
+int idx;
+
+pthread_t p_thread;
+int result;
+pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
 Linklist* GetNode(){
 	Linklist* tmp;
@@ -157,13 +163,9 @@ int CheckFile(Linklist** head, char cm_file[]){
 		return 0;
 	}
 	if(strcmp((*head)->route, cm_file) == 0) { return 1; }
-	CheckFile(&(*head)->link, cm_file);
+	return CheckFile(&(*head)->link, cm_file);
 }
 
-pthread_t p_thread;
-int result;
-
-pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 //pthread_mutex_init(&mutex, NULL);
 
 void Copy(char path[], char file[]){
@@ -476,8 +478,8 @@ void Compare(Linklist* head, char path[], char file[], char option[][32]){ //com
 		puts("File1 = File2");
 	}
 	else {
-		printf("File1 = mtime : %ld, 파일 크기 : %ld bytes\n", file1_info.st_mtime, file1_info.st_size);
-		printf("File2 = mtime : %ld, 파일 크기 : %ld bytes\n", file2_info.st_mtime, file2_info.st_size);
+		printf("File1 = mtime : %ld, 파일 크기 : %lld bytes\n", file1_info.st_mtime, file1_info.st_size);
+		printf("File2 = mtime : %ld, 파일 크기 : %lld bytes\n", file2_info.st_mtime, file2_info.st_size);
 	}
 
 	return;
@@ -492,7 +494,7 @@ int Rec_check(Linklist* head, char file[]){
 	if(strcmp(head->route, file) == 0){
 		return 1;
 	}
-	Rec_check(head->link, file);
+	return Rec_check(head->link, file);
 }
 
 /*
@@ -533,7 +535,7 @@ char* Print_number(char path[], char file[]){
 			//char byte[16] = fs.st_size;
 			char byte[16];
 			//strcpy(byte, fs.st_size);
-			sprintf(byte, "%ld", fs.st_size);
+			sprintf(byte, "%lld", fs.st_size);
 			char* date = strrchr(dp->d_name, '_');
 			sprintf(arr[numbering], "%d.%s", numbering, date);
 			printf("%d. %s\t%s\n", numbering, date, byte);
@@ -583,7 +585,7 @@ int Recover(Linklist** head, LogDetail* lhead, char file[], char path[]){
 		//백업 수행 종료 관련 명령문 작성 예정
 		pthread_cancel((*head)->t_id);
 		Removelog2((*head)->route);
-		//백업 리스트에 없애
+		//백업 리스트에 없애기
 	}
 	if(fopen(file, "r") == NULL){//변경할 파일이 존재하지 않는 경우
 		puts("Fail to recover command");
@@ -597,7 +599,7 @@ int Recover(Linklist** head, LogDetail* lhead, char file[], char path[]){
 	char* f_name = strrchr(file, '/');
 	dir = opendir(path);
 	while((dp = readdir(dir)) != NULL){
-		if(dp->d_ino == 0) c야ontinue;
+		if(dp->d_ino == 0) continue;
 		if(strstr(dp->d_name, f_name) != NULL){
 			incl = 1;
 			break;
@@ -814,12 +816,10 @@ int base_print(Linklist* head, char path[256], LogDetail* lhead){
 }
 
 //pthread_t p_thread[32];
-int re = 0;
-int idx;
 //char B_diclist[256][256];
 //memset(B_diclist, '\0', sizeof(B_diclist));
 
-int main(char argc, char* argv[]){
+int main(int argc, char* argv[]){
 	system("clear");
 	//pthread_t p_thread[32];
 	Linklist* head = NULL;

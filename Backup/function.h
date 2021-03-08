@@ -19,7 +19,7 @@ typedef struct logDetail{
 typedef struct node {
 	char route[256];
 	int period;
-	int t_id;
+	pthread_t t_id;
 	struct node* link;
 }Linklist;
 
