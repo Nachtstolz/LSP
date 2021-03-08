@@ -203,7 +203,7 @@ void Copy(char path[], char file[]){
 		int c = getc(ft);
 		if(!feof(ft)){
 			fputc(c, nf);
-			fseek(ft, 1, SEEK_CUR);
+			//fseek(ft, 1, SEEK_CUR);
 		}else break;
 	}
 	fclose(ft);
@@ -645,11 +645,12 @@ int Recover(Linklist** head, LogDetail* lhead, char file[], char path[]){
 	return 1;
 }
 
-void List(Linklist* head){ //list 명령어에 대한 함수
-	if(head == NULL) return;
-	
-	printf("%s\t%d", head->route, head->period);
-	List(head->link);
+void List(Linklist** head){ //list 명령어에 대한 함수
+	fprintf(stderr, "List 함수 들어옴\n");
+	if(*head){
+		printf("%s\t%d", (*head)->route, (*head)->period);
+		List(&(*head)->link);
+	}
 }
 
 void Ls(char file[]){ //argv를 사용하거나 함수에 들어오기 전 공백을 단위로 나누어서 인자 저장하는 방법으로 진행하기
@@ -728,7 +729,7 @@ int Exit(Linklist** head){
 }
 
 //path는 절대경로 상의 백업 딕셔너리 주소
-int base_print(Linklist* head, char path[256], LogDetail* lhead){
+int base_print(Linklist** head, char path[256], LogDetail* lhead){
 	char input[256];
 	int sep = 0; //separator. 공백을 단위로 나누기 위함
 	char oper[8] = {0};
@@ -771,27 +772,29 @@ int base_print(Linklist* head, char path[256], LogDetail* lhead){
 
 	int re = 1;
 	if(strcmp(oper, "add") == 0){
-		re = Add(&head, lhead, path, file, option);
+		re = Add(&(*head), lhead, path, file, option);
 		//pthread_join(p_thread, (void*)&result);
 		return re;
 		//add 명령어와 맞는 함수
 	}
 	else if (strcmp(oper, "remove") == 0){
-		re = Remove(&head, lhead, path, file, option);
+		re = Remove(&(*head), lhead, path, file, option);
 		return re;
 		//remove 명령어와 맞는 함수
 	}
 	else if (strcmp(oper, "compare") == 0){
-		Compare(head, path, file, option);
+		Compare(*head, path, file, option);
 		//compare과 맞는 함수
 	}
 	else if (strcmp(oper, "recover") == 0){
-		re = Recover(&head, lhead, file, path);
+		re = Recover(&(*head), lhead, file, path);
 		return re;
 		//recover과 맞는 함수
 	}
 	else if (strcmp(oper, "list") == 0){
-		List(head);
+		fprintf(stderr, "list 함수 시작\n");
+		List(&(*head));
+		fprintf(stderr, "list 함수 끝\n");
 		//list와 맞는 함수
 	}
 	else if (strcmp(oper, "ls") == 0){
@@ -804,7 +807,7 @@ int base_print(Linklist* head, char path[256], LogDetail* lhead){
 		//system("vi");
 	}
 	else if (strcmp(oper, "exit") == 0){
-		re = Exit(&head);
+		re = Exit(&(*head));
 		return re;
 		//exit에 맞는 함수
 	}
@@ -834,33 +837,31 @@ int main(int argc, char* argv[]){
 		
 	}*/
 	//fprintf(stderr, "the");
-
-	if(strchr(argv[1], '/') == NULL){ //상대 경로의 경우 현재 경로 앞에 추가
-		//char way1[256];
-		//getcwd(way1, sizeof(way1));
-		//sprintf(path, "%s%s", way1, argv[0]);
-		realpath(argv[1], path);
-		//printf("%s\n%s\n", argv[1], path);
-	}
-	//printf("%s\n%s\n", path, argv[1]);
-
-	//fprintf(stderr, "problem");
-	//fprintf(stderr, "%s\n", path);
+	char backup[16];
+	int number = 1;
 	int dir_res;
-	if(argv[0] == NULL){
-		int number = 1;
+
+	if(argv[1] == NULL){
 		while(1){
-		// backup1, backup2 이런식으로 만들 수 있도록 하기
-			char path2[512];
-			sprintf(path2, "%s/%s%d", path, "backup", number);
-			dir_res = mkdir(path2, 0775);
-			if(dir_res == 0){
-				break;
-			}
+			sprintf(backup, "%s%d", "backup", number);
+			realpath(backup, path);
+			dir_res = mkdir(path, 0775);
+			if(dir_res == 0) break;
 			number++;
 		}
 	}
 	else {
+		if(strchr(argv[1], '/') == NULL){ //상대 경로의 경우 현재 경로 앞에 추가
+			//char way1[256];
+			//getcwd(way1, sizeof(way1));
+			//sprintf(path, "%s%s", way1, argv[0]);
+			realpath(argv[1], path);
+			//printf("%s\n%s\n", argv[1], path);
+		}
+		//printf("%s\n%s\n", path, argv[1]);
+
+		//fprintf(stderr, "problem");
+		//fprintf(stderr, "%s\n", path);
 		dir_res = mkdir(path, 0775);
 	}
 		//printf("%d\n", dir_res); //체크 용도
@@ -912,7 +913,7 @@ int main(int argc, char* argv[]){
 
 	//fprintf(stderr, "here3\n");
 	while(re){
-		re = base_print(head, path, lhead);
+		re = base_print(&head, path, lhead);
 		/*
 		if(re == 2){
 			pthread_join(p_thread, (void*)&result);
