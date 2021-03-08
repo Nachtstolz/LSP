@@ -172,7 +172,7 @@ void Copy(char path[], char file[]){
 	time_t tt;
 	tm* td;
 	
-	fprintf(stderr, "copy 함수 시작\n");
+	//fprintf(stderr, "copy 함수 시작\n");
 	time(&tt);
 	td = localtime(&tt);
 	
@@ -328,26 +328,22 @@ int Add(Linklist** head, LogDetail* lhead, char path[], char file[], char option
 		*head = (*head)->link;
 	}
 
-	// 재귀문 전용
-
-	while((*head) == NULL){
-		(*head) = GetNode();
-		strcpy((*head)->route, file); // *head->route = file;
-		(*head)->period = atoi(option[0]);
-		(*head)->link = NULL;
+	//while((*head) == NULL){
+	(*head) = GetNode();
+	strcpy((*head)->route, file); // *head->route = file;
+	(*head)->period = atoi(option[0]);
+	(*head)->link = NULL;
 		
-		//fprintf(stderr, "3\n");
-		Factor* fac = GetFactor((*head), path, file, option[0]);
-		//fprintf(stderr, "Factor 만들기 완료\n");
-		(*head)->t_id = p_thread;
-		//fprintf(stderr, "thread 만들기 전\n");
-		pthread_create(&p_thread, NULL, thr_func, (void*)fac);
-		//fprintf(stderr, "thread 만들기 완료\n");
-		
-		thr_func((void*)fac);
-		pthread_join(p_thread, (void*)&result);
+	//fprintf(stderr, "3\n");
+	Factor* fac = GetFactor((*head), path, file, option[0]);
+	//fprintf(stderr, "Factor 만들기 완료\n");
+	(*head)->t_id = p_thread;
+	//fprintf(stderr, "thread 만들기 전\n");
+	pthread_create(&p_thread, NULL, thr_func, (void*)fac);
+	//fprintf(stderr, "thread 만들기 완료\n")
 
-		//fprintf(
+	//pthread_join(p_thread, (void*)&result);
+
 		//pthread_mutex_destroy(&mutex);
 		//백업 진행
 		//Copy(path, file); //파일을 복사하는 작업을 함수로
@@ -359,8 +355,8 @@ int Add(Linklist** head, LogDetail* lhead, char path[], char file[], char option
 		//fputs(lhead, logflie);
 		// 연결리스트를 그대로 fputs하는 것이 불가능하기 때문에 넣는 함수를 임의로 만들어주는 방법 생각
 		//Insertlog(lhead);
-		break;
-	}
+	//	break;
+	//}
 
 	//fprintf(stderr, "4\n");
 	
@@ -838,6 +834,7 @@ int main(int argc, char* argv[]){
 		
 	}*/
 	//fprintf(stderr, "the");
+
 	if(strchr(argv[1], '/') == NULL){ //상대 경로의 경우 현재 경로 앞에 추가
 		//char way1[256];
 		//getcwd(way1, sizeof(way1));
@@ -849,8 +846,24 @@ int main(int argc, char* argv[]){
 
 	//fprintf(stderr, "problem");
 	//fprintf(stderr, "%s\n", path);
-	int dir_res = mkdir(path, 0775);
-	//printf("%d\n", dir_res); //체크 용도
+	int dir_res;
+	if(argv[0] == NULL){
+		int number = 1;
+		while(1){
+		// backup1, backup2 이런식으로 만들 수 있도록 하기
+			char path2[512];
+			sprintf(path2, "%s/%s%d", path, "backup", number);
+			dir_res = mkdir(path2, 0775);
+			if(dir_res == 0){
+				break;
+			}
+			number++;
+		}
+	}
+	else {
+		dir_res = mkdir(path, 0775);
+	}
+		//printf("%d\n", dir_res); //체크 용도
 	if(argc > 2){ //인자가 2개 이상
 		printf("Usage : %s", path);
 		//printf("\n인자가 2개 이상");
