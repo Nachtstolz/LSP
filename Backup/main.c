@@ -43,7 +43,7 @@ void Addlog2(char file[], int start){ //스레드 함수 내에 쓰일 add로그
 	tm* td;
 
 	FILE* fp;
-	fp = fopen("./logfile", "a+");
+	fp = fopen("./logfile", "a");
 	
 	time(&tt);
 	td = localtime(&tt);
@@ -57,12 +57,15 @@ void Addlog2(char file[], int start){ //스레드 함수 내에 쓰일 add로그
 	char log[512];
 	char edit_file[32];
 	if(start == 1){
-		sprintf(log, "[%d%d%d %d%d%d] %s %s", td_year, td_mon, td_day, td_hour, td_min, td_sec, file, "added");
+		sprintf(log, "[%02d%02d%02d %02d%02d%02d] %s %s\n", td_year, td_mon, td_day, td_hour, td_min, td_sec, file, "added");
 	}
 	else{
-		sprintf(edit_file, "%d%d%d%d%d%d", td_year, td_mon, td_day, td_hour, td_min, td_sec);
-		sprintf(log, "[%d%d%d %d%d%d] %s_%s %s", td_year, td_mon, td_day, td_hour, td_min, td_sec, file, edit_file, "generated");
+		sprintf(edit_file, "%02d%02d%02d%02d%02d%02d", td_year, td_mon, td_day, td_hour, td_min, td_sec);
+		sprintf(log, "[%02d%02d%02d %02d%02d%02d] %s_%s %s\n", td_year, td_mon, td_day, td_hour, td_min, td_sec, file, edit_file, "generated");
 	}
+
+	fputs(log, fp);
+	fclose(fp);
 
 	return;
 }
@@ -101,7 +104,7 @@ void Removelog(LogDetail* lhead, char file[]){ //로그파일에 로그 삭제
 
 void Removelog2(char file[]){
 	FILE* fp;
-	fopen("./logfile", "a+");
+	fp = fopen("./logfile", "a");
 
 	time_t tt;
 	tm* td;
@@ -117,7 +120,9 @@ void Removelog2(char file[]){
 	int td_sec = td->tm_sec;
 
 	char log[512];
-	sprintf(log, "[%d%d%d %d%d%d] %s %s", td_year, td_mon, td_day, td_hour, td_min, td_sec, file, "deleted");
+	sprintf(log, "[%02d%02d%02d %02d%02d%02d] %s %s\n", td_year, td_mon, td_day, td_hour, td_min, td_sec, file, "deleted");
+	fputs(log, fp);
+	fclose(fp);
 
 	return;
 }
@@ -182,7 +187,7 @@ void Copy(char path[], char file[]){
 	//pthread_mutex_init(&mutex,NULL);
 
 	//fprintf(stderr, "로그 파일에 쓰일 문자열 적기\n");
-	sprintf(date, "%d%d%d%d%d%d", td_year, td_mon, td_day, td_hour, td_min, td_sec);
+	sprintf(date, "%02d%02d%02d%02d%02d%02d", td_year, td_mon, td_day, td_hour, td_min, td_sec);
 	sprintf(n_file, "%s_%s", file, date);
 	char* sep = strrchr(n_file, '/');
 	sprintf(n_path, "%s%s", path, sep);
@@ -228,7 +233,7 @@ void *thr_func(void* fac){
 	strcpy(file, factor->file);
 	int period = head->period;
 	int start = 1;
-	Addlog2(file, start);
+	//Addlog2(file, start);
 	//Removelog2(file);
 
 	//fprintf(stderr, "thread 함수 진행중\n");
@@ -242,6 +247,7 @@ void *thr_func(void* fac){
 		}*/
 		//fprintf(stderr, "백업 진행 시작\n");
 		Copy(path, file); //파일을 백업 디렉토리에 복사
+		Addlog2(file, start);
 		//fprintf(stderr, "thread 함수 백업 진행 중\n");
 		sleep(period);
 		start++;
@@ -315,9 +321,16 @@ int Add(Linklist** head, LogDetail* lhead, char path[], char file[], char option
 	//fprintf(stderr, "1");
 	
 	//fprintf(stderr, "2");
+
+	while((*head) != NULL){
+		*head = (*head)->link;
+	}
+
+	// 재귀문 전용
+
 	while((*head) == NULL){
 		(*head) = GetNode();
-		strcpy((*head)->route, file);//*head->route = file;
+		strcpy((*head)->route, file); // *head->route = file;
 		(*head)->period = atoi(option[0]);
 		(*head)->link = NULL;
 		
@@ -346,8 +359,11 @@ int Add(Linklist** head, LogDetail* lhead, char path[], char file[], char option
 		//Insertlog(lhead);
 		break;
 	}
+
 	//fprintf(stderr, "4\n");
-	Add(&(*head)->link, lhead, path, file, option);
+	
+	//재귀문
+	//Add(&(*head)->link, lhead, path, file, option);
 	
 	return 1;
 }
@@ -385,15 +401,17 @@ int Remove(Linklist** head, LogDetail* lhead, char path[], char file[], char opt
 	}
 	
 	if(strcmp((*head)->link->route, file) == 0){
+		//스레드에 영향을 미치는 함수
+		pthread_cancel((*head)->t_id);
+
 		//head->link = head->link->link;
+		
 		Linklist* tmp = NULL;
 		tmp = (*head)->link;
-		(*head) = tmp->link;
+		(*head)->link = tmp->link;
 		free(tmp);
 		//잘 작동하는지 확인할 필요 있음.
 
-		//스레드에 영향을 미치는 함수
-		pthread_cancel((*head)->t_id);
 		//Delete(path, file);
 
 		//로그에 대한 함수들
@@ -564,6 +582,8 @@ int Recover(Linklist** head, LogDetail* lhead, char file[], char path[]){
 	if(ch == 1){ //변경할 파일이 현재 백업 리스트에 존재하는 경우
 		//백업 수행 종료 관련 명령문 작성 예정
 		pthread_cancel((*head)->t_id);
+		Removelog2((*head)->route);
+		//백업 리스트에 없애
 	}
 	if(fopen(file, "r") == NULL){//변경할 파일이 존재하지 않는 경우
 		puts("Fail to recover command");
@@ -577,7 +597,7 @@ int Recover(Linklist** head, LogDetail* lhead, char file[], char path[]){
 	char* f_name = strrchr(file, '/');
 	dir = opendir(path);
 	while((dp = readdir(dir)) != NULL){
-		if(dp->d_ino == 0) continue;
+		if(dp->d_ino == 0) c야ontinue;
 		if(strstr(dp->d_name, f_name) != NULL){
 			incl = 1;
 			break;
@@ -594,8 +614,10 @@ int Recover(Linklist** head, LogDetail* lhead, char file[], char path[]){
 	char* n_date = Print_number(path, f_name); //리스트를 보여주는 함수. 반환되는 문자열은 파일 뒤에 붙는 시간부분을 의미
 	if(strcpy(n_date, "exit") == 0){
 		//모든 실행중인 백업 중지 후 프로그램 종료
+		//어차피 list 명령어가 쓸모가 없으므로 연결리스트 변경 X
 		while((*head) != NULL){
 			pthread_cancel((*head)->t_id);
+			Removelog2((*head)->route);
 			(*head) = (*head)->link;
 		}
 		return 0; //return 부분 수정해야
@@ -697,8 +719,10 @@ void Vi(char file[]){
 
 int Exit(Linklist** head){
 
+	// list 명령어를 사용하지 않기 때문에 연결리스트 변경 X
 	while((*head) != NULL){
 		pthread_cancel((*head)->t_id);
+		Removelog2((*head)->route);
 		(*head) = (*head)->link;
 	}
 
