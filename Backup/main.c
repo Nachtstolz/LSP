@@ -159,11 +159,15 @@ void Insertlog(LogDetail* lhead){
 }
 */
 int CheckFile(Linklist** head, char cm_file[]){
-	if((*head) == NULL){
-		return 0;
+	Linklist* hhead = *head;
+
+	while(1) {
+		if((hhead) == NULL){
+			return 0;
+		}
+		if(strcmp((hhead)->route, cm_file) == 0) { return 1; }
+		hhead = hhead->link;
 	}
-	if(strcmp((*head)->route, cm_file) == 0) { return 1; }
-	return CheckFile(&(*head)->link, cm_file);
 }
 
 //pthread_mutex_init(&mutex, NULL);
@@ -268,6 +272,7 @@ int Add(Linklist** head, LogDetail* lhead, char path[], char file[], char option
 	//FILE* fp;
 	struct stat f_info;
 	mode_t f_mode;
+	Linklist* hhead = *head;
 	//LogDetail* put_log;
 	//int result;
 
@@ -302,7 +307,7 @@ int Add(Linklist** head, LogDetail* lhead, char path[], char file[], char option
 
 	// 백업해야할 파일이 백업리스트에 존재하는 지 확인 후 처리
 	//lhead -> head로 변경해서 진행해야할 것으로 판단
-	if(CheckFile(&(*head), file) == 1){
+	if(CheckFile(&hhead, file) == 1){
 		puts("Fail to open file");
 		//printf("백업 리스트에 존재하는 파일");
 		return 1;
@@ -324,26 +329,26 @@ int Add(Linklist** head, LogDetail* lhead, char path[], char file[], char option
 	
 	//fprintf(stderr, "2");
 
-	while((*head) != NULL){
-		*head = (*head)->link;
+	while(hhead != NULL){
+		(hhead) = (hhead)->link;
 	}
 
 	//while((*head) == NULL){
-	(*head) = GetNode();
-	strcpy((*head)->route, file); // *head->route = file;
-	(*head)->period = atoi(option[0]);
-	(*head)->link = NULL;
+	(hhead) = GetNode();
+	strcpy((hhead)->route, file); // *head->route = file;
+	(hhead)->period = atoi(option[0]);
+	(hhead)->link = NULL;
 		
 	//fprintf(stderr, "3\n");
-	Factor* fac = GetFactor((*head), path, file, option[0]);
+	Factor* fac = GetFactor(hhead, path, file, option[0]);
 	//fprintf(stderr, "Factor 만들기 완료\n");
-	(*head)->t_id = p_thread;
+	(hhead)->t_id = p_thread;
 	//fprintf(stderr, "thread 만들기 전\n");
 	pthread_create(&p_thread, NULL, thr_func, (void*)fac);
 	//fprintf(stderr, "thread 만들기 완료\n")
 
 	//pthread_join(p_thread, (void*)&result);
-
+	pthread_detach(p_thread);
 		//pthread_mutex_destroy(&mutex);
 		//백업 진행
 		//Copy(path, file); //파일을 복사하는 작업을 함수로
@@ -385,6 +390,8 @@ void Delete(char path[], char file[]){
 */
 
 int Remove(Linklist** head, LogDetail* lhead, char path[], char file[], char option[][32]){
+	Linklist* hhead = *head;
+
 	//FILENAME 입력 없을 시
 	if(strcmp(file, "\0") == 0){
 		puts("Fail to remove command");
@@ -392,40 +399,45 @@ int Remove(Linklist** head, LogDetail* lhead, char path[], char file[], char opt
 		return 1;
 	}
 	//백업을 중단할 파일이 백업 리스트에 존재하지 않을 시(로그 파일)
-	if(CheckFile(&(*head), file) == 1){
+	if(CheckFile(&hhead, file) == 1){
 
 		puts("Fail to remove command");
 		return 1;
 	}
 	
-	if(strcmp((*head)->link->route, file) == 0){
-		//스레드에 영향을 미치는 함수
-		pthread_cancel((*head)->t_id);
+	while(1){
 
-		//head->link = head->link->link;
+		if(strcmp(hhead->route, file) == 0){
+			//스레드에 영향을 미치는 함수
+			pthread_cancel(hhead->t_id);
+
+			//head->link = head->link->link;
 		
-		Linklist* tmp = NULL;
-		tmp = (*head)->link;
-		(*head)->link = tmp->link;
-		free(tmp);
-		//잘 작동하는지 확인할 필요 있음.
+			Linklist* tmp = NULL;
+			tmp = hhead->link;
+			hhead->link = tmp->link;
+			free(tmp);
+			//잘 작동하는지 확인할 필요 있음.
 
-		//Delete(path, file);
-
-		//로그에 대한 함수들
-		//Removelog(lhead, file);
-		//Insertlog(lhead);
-		Removelog2(file);
+			//Delete(path, file);
+	
+			//로그에 대한 함수들
+			//Removelog(lhead, file);
+			//Insertlog(lhead);
+			Removelog2(file);
+		}
+		hhead = hhead->link;
 	}
 
 	//pthread_cancel(head->t_id); //이 부분을 Delete 함수 내에서 진행해보기
-	Remove(&(*head)->link, lhead, path, file, option);
+//	Remove(&hhead->link, lhead, path, file, option);
 
 	return 1;
 }
 
 void Compare(Linklist* head, char path[], char file[], char option[][32]){ //compare 명령어에 대한 함수
 
+	Linklist* hhead = head;
 	int comp1 = 0;
 	int comp2 = 0;
 	struct stat file1_info;
@@ -483,14 +495,19 @@ void Compare(Linklist* head, char path[], char file[], char option[][32]){ //com
 }
 
 int Rec_check(Linklist* head, char file[]){
-	if(head == NULL){
-		return 0; //백업파일이 없다는 것 의미
-	}
 
-	if(strcmp(head->route, file) == 0){
-		return 1;
+	Linklist* hhead = head;
+
+	while(1){
+		if(hhead == NULL){
+			return 0; //백업파일이 없다는 것 의미
+		}
+
+		if(strcmp(hhead->route, file) == 0){
+			return 1;
+		}
+		hhead = hhead->link;
 	}
-	return Rec_check(head->link, file);
 }
 
 /*
@@ -565,7 +582,7 @@ void R_Copy(char new_name[], char file[], char path[]){ //Recover 명령어를 �
 		int c = getc(nf);
 		if(!feof(nf)){
 			fputc(c, fp);
-			fseek(nf, 1, SEEK_CUR);
+			//fseek(nf, 1, SEEK_CUR);
 		} else break;
 	}
 	fclose(fp);
@@ -576,12 +593,22 @@ void R_Copy(char new_name[], char file[], char path[]){ //Recover 명령어를 �
 
 int Recover(Linklist** head, LogDetail* lhead, char file[], char path[]){
 
-	int ch = Rec_check((*head), file); //백업 파일이 현재 백업 리스트에 존재하는 경우 확인. 백업 수행 종료를 진행해야 함.
+	Linklist* hhead = *head;
+
+	int ch = Rec_check(hhead, file); //백업 파일이 현재 백업 리스트에 존재하는 경우 확인. 백업 수행 종료를 진행해야 함.
 	if(ch == 1){ //변경할 파일이 현재 백업 리스트에 존재하는 경우
 		//백업 수행 종료 관련 명령문 작성 예정
-		pthread_cancel((*head)->t_id);
-		Removelog2((*head)->route);
+		pthread_cancel(hhead->t_id);
+		Removelog2(hhead->route);
 		//백업 리스트에 없애기
+
+		while(hhead->link != NULL){
+			Linklist* tmp = NULL;
+			tmp = hhead->link;
+			hhead->link = tmp->link;
+			free(tmp);
+		}
+		free(hhead);
 	}
 	if(fopen(file, "r") == NULL){//변경할 파일이 존재하지 않는 경우
 		puts("Fail to recover command");
@@ -613,10 +640,10 @@ int Recover(Linklist** head, LogDetail* lhead, char file[], char path[]){
 	if(strcpy(n_date, "exit") == 0){
 		//모든 실행중인 백업 중지 후 프로그램 종료
 		//어차피 list 명령어가 쓸모가 없으므로 연결리스트 변경 X
-		while((*head) != NULL){
-			pthread_cancel((*head)->t_id);
-			Removelog2((*head)->route);
-			(*head) = (*head)->link;
+		while(hhead != NULL){
+			pthread_cancel(hhead->t_id);
+			Removelog2(hhead->route);
+			hhead = hhead->link;
 		}
 		return 0; //return 부분 수정해야
 		//pthread_exit();
@@ -636,7 +663,7 @@ int Recover(Linklist** head, LogDetail* lhead, char file[], char path[]){
 		int c = getc(fp);
 		if(!feof(fp)){
 			printf("%c", c);
-			fseek(fp, 1, SEEK_CUR);
+			//fseek(fp, 1, SEEK_CUR);
 		}else break;
 	}
 
@@ -646,10 +673,14 @@ int Recover(Linklist** head, LogDetail* lhead, char file[], char path[]){
 }
 
 void List(Linklist** head){ //list 명령어에 대한 함수
+	Linklist* hhead = *head;
 	fprintf(stderr, "List 함수 들어옴\n");
-	if(*head){
-		printf("%s\t%d", (*head)->route, (*head)->period);
-		List(&(*head)->link);
+	while(1){
+		if(hhead){
+			printf("%s\t%d", (hhead)->route, (hhead)->period);
+			hhead = (hhead)->link;
+		}
+		else { break; }
 	}
 }
 
@@ -718,11 +749,12 @@ void Vi(char file[]){
 
 int Exit(Linklist** head){
 
+	Linklist* hhead = *head;
 	// list 명령어를 사용하지 않기 때문에 연결리스트 변경 X
-	while((*head) != NULL){
-		pthread_cancel((*head)->t_id);
-		Removelog2((*head)->route);
-		(*head) = (*head)->link;
+	while(hhead != NULL){
+		pthread_cancel(hhead->t_id);
+		Removelog2(hhead->route);
+		hhead = hhead->link;
 	}
 
 	return 0; //return 부분 나중에 첨삭
@@ -735,6 +767,10 @@ int base_print(Linklist** head, char path[256], LogDetail* lhead){
 	char oper[8] = {0};
 	char file[512] = {0};
 	char option[2][32] = {0};
+	
+	while((*head)){
+		fprintf(stderr, "%s", (*head)->route);
+	}
 
 	printf("20193058> "); //기본 프롬프트 모양
 	fgets(input, sizeof(input), stdin); //fgets로 받는 것이 더 좋음
