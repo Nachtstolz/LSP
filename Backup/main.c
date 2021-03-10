@@ -21,13 +21,14 @@ Linklist* GetNode(){
 	tmp->link = NULL;
 	return tmp;
 }*/
-
+/*
 LogDetail* GetLog(){
 	LogDetail* tmp;
 	tmp = (LogDetail*)malloc(sizeof(LogDetail));
 	tmp->link = NULL;
 	return tmp;
 }
+*/
 /*
 void Addlog(LogDetail* lhead, char file[], tm* td){ //로그파일에 로그 추가
 	
@@ -328,24 +329,29 @@ int Add(Linklist** head, LogDetail* lhead, char path[], char file[], char option
 	//fprintf(stderr, "1");
 	
 	//fprintf(stderr, "2");
-
-	while(hhead != NULL){
-		(hhead) = (hhead)->link;
+	if((*head) == NULL){
+		*head = GetNode();
+		hhead = *head;
 	}
-
-	//while((*head) == NULL){
-	(hhead) = GetNode();
+	else{
+		while(hhead->link != NULL){
+			hhead = hhead->link;
+		}
+		hhead->link = GetNode();
+		hhead = hhead->link;
+	}
+	
 	strcpy((hhead)->route, file); // *head->route = file;
 	(hhead)->period = atoi(option[0]);
 	(hhead)->link = NULL;
-		
+
 	//fprintf(stderr, "3\n");
 	Factor* fac = GetFactor(hhead, path, file, option[0]);
 	//fprintf(stderr, "Factor 만들기 완료\n");
 	(hhead)->t_id = p_thread;
 	//fprintf(stderr, "thread 만들기 전\n");
 	pthread_create(&p_thread, NULL, thr_func, (void*)fac);
-	//fprintf(stderr, "thread 만들기 완료\n")
+	//fprintf(stderr, "thread 만들기 완료\n");
 
 	//pthread_join(p_thread, (void*)&result);
 	pthread_detach(p_thread);
@@ -367,7 +373,7 @@ int Add(Linklist** head, LogDetail* lhead, char path[], char file[], char option
 	
 	//재귀문
 	//Add(&(*head)->link, lhead, path, file, option);
-	
+
 	return 1;
 }
 
@@ -395,40 +401,64 @@ int Remove(Linklist** head, LogDetail* lhead, char path[], char file[], char opt
 	//FILENAME 입력 없을 시
 	if(strcmp(file, "\0") == 0){
 		puts("Fail to remove command");
+		printf("No input file name\n");
 		//basic 함수로 넘어가서 return 처리가 바로 될 수 있도록 조건 넣어줄 것
 		return 1;
 	}
 	//백업을 중단할 파일이 백업 리스트에 존재하지 않을 시(로그 파일)
-	if(CheckFile(&hhead, file) == 1){
+	if(CheckFile(&hhead, file) != 1){
 
 		puts("Fail to remove command");
 		return 1;
 	}
-	
+
+	if(strcmp((*head)->route, file) == 0){
+		pthread_cancel((*head)->t_id);
+
+		fprintf(stderr, "head thread 취소 완료 \n");
+		Linklist* tmp = *head;
+		*head = (*head)->link;
+		hhead = *head;
+		free(tmp);
+		Removelog2(file);
+
+		fprintf(stderr, "head 삭제 완료\n");
+		return 1;
+	}
+
 	while(1){
 
-		if(strcmp(hhead->route, file) == 0){
+		if(strcmp(hhead->link->route, file) == 0){
 			//스레드에 영향을 미치는 함수
 			pthread_cancel(hhead->t_id);
 
 			//head->link = head->link->link;
-		
-			Linklist* tmp = NULL;
-			tmp = hhead->link;
-			hhead->link = tmp->link;
-			free(tmp);
+			fprintf(stderr, "thread 취소 완료\n");
+			Linklist* tmp = hhead->link;
+			if(tmp->link != NULL){
+			//	Linklist* tmp = hhead->link;
+				//Linklist* tmp = NULL;
+				//tmp = hhead->link;
+				hhead->link = tmp->link;
+				free(tmp);
+			}
+			else{
+				free(tmp);
+			}
 			//잘 작동하는지 확인할 필요 있음.
-
+			fprintf(stderr, "삭제 완료\n");
 			//Delete(path, file);
 	
 			//로그에 대한 함수들
 			//Removelog(lhead, file);
 			//Insertlog(lhead);
 			Removelog2(file);
+			break;
 		}
 		hhead = hhead->link;
 	}
 
+	//Removelog2(file);
 	//pthread_cancel(head->t_id); //이 부분을 Delete 함수 내에서 진행해보기
 //	Remove(&hhead->link, lhead, path, file, option);
 
@@ -674,10 +704,10 @@ int Recover(Linklist** head, LogDetail* lhead, char file[], char path[]){
 
 void List(Linklist** head){ //list 명령어에 대한 함수
 	Linklist* hhead = *head;
-	fprintf(stderr, "List 함수 들어옴\n");
+	//fprintf(stderr, "List 함수 들어옴\n");
 	while(1){
 		if(hhead){
-			printf("%s\t%d", (hhead)->route, (hhead)->period);
+			printf("%s\t%d\n", (hhead)->route, (hhead)->period);
 			hhead = (hhead)->link;
 		}
 		else { break; }
@@ -768,10 +798,6 @@ int base_print(Linklist** head, char path[256], LogDetail* lhead){
 	char file[512] = {0};
 	char option[2][32] = {0};
 	
-	while((*head)){
-		fprintf(stderr, "%s", (*head)->route);
-	}
-
 	printf("20193058> "); //기본 프롬프트 모양
 	fgets(input, sizeof(input), stdin); //fgets로 받는 것이 더 좋음
 	input[strlen(input) - 1] = '\0';
@@ -828,9 +854,7 @@ int base_print(Linklist** head, char path[256], LogDetail* lhead){
 		//recover과 맞는 함수
 	}
 	else if (strcmp(oper, "list") == 0){
-		fprintf(stderr, "list 함수 시작\n");
 		List(&(*head));
-		fprintf(stderr, "list 함수 끝\n");
 		//list와 맞는 함수
 	}
 	else if (strcmp(oper, "ls") == 0){
