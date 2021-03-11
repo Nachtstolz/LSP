@@ -247,6 +247,7 @@ void *thr_func(void* fac){
 	//pthread_mutex_lock(&mutex);
 
 	while(1){
+		//sleep(period);
 		pthread_mutex_lock(&mutex);
 		/*if(){ //스레드 종료 조건 넣어야
 			pthread_exit((void*)&result);
@@ -256,10 +257,11 @@ void *thr_func(void* fac){
 		Copy(path, file); //파일을 백업 디렉토리에 복사
 		Addlog2(file, start);
 		//fprintf(stderr, "thread 함수 백업 진행 중\n");
-		sleep(period);
+		//sleep(period);
 		start++;
 
 		pthread_mutex_unlock(&mutex);
+		sleep(period);
 	}
 	//pthread_mutex_unlock(&mutex);
 
@@ -354,7 +356,7 @@ int Add(Linklist** head, LogDetail* lhead, char path[], char file[], char option
 	//fprintf(stderr, "thread 만들기 완료\n");
 
 	//pthread_join(p_thread, (void*)&result);
-	//pthread_detach(p_thread);
+	pthread_detach(p_thread);
 		//pthread_mutex_destroy(&mutex);
 		//백업 진행
 		//Copy(path, file); //파일을 복사하는 작업을 함수로
@@ -419,7 +421,7 @@ int Remove(Linklist** head, LogDetail* lhead, char path[], char file[], char opt
 		Linklist* tmp = *head;
 		*head = (*head)->link;
 		//hhead = *head;
-		free(tmp);
+		//free(tmp);
 		Removelog2(file);
 
 		fprintf(stderr, "head 삭제 완료\n");
@@ -441,10 +443,11 @@ int Remove(Linklist** head, LogDetail* lhead, char path[], char file[], char opt
 				//Linklist* tmp = NULL;
 				//tmp = hhead->link;
 				hhead->link = tmp->link;
-				free(tmp);
+				//free(tmp);
 			}
 			else{
-				free(tmp);
+				hhead->link = NULL;
+				//free(tmp);
 			}
 			//잘 작동하는지 확인할 필요 있음.
 			fprintf(stderr, "삭제 완료\n");
@@ -453,6 +456,7 @@ int Remove(Linklist** head, LogDetail* lhead, char path[], char file[], char opt
 			//로그에 대한 함수들
 			//Removelog(lhead, file);
 			//Insertlog(lhead);
+			
 			Removelog2(file);
 			break;
 		}
@@ -559,7 +563,7 @@ void Pring_log(LogDetail* lhead, char f_name[]){
 }
 */
 
-char* Print_number(char path[], char file[]){
+char** Print_number(char path[], char file[]){
 
 	int numbering = 0;
 	DIR* dir = NULL;
@@ -572,9 +576,11 @@ char* Print_number(char path[], char file[]){
 	printf("%d. exit\n", numbering);
 	dir = opendir(path);
 	while((dp = readdir(dir)) != NULL){
-		fprintf(stderr, "%s %s\n", dp->d_name, file);
+		
+	//	fprintf(stderr, "%s %s\n", dp->d_name, file);
 		if(strstr(dp->d_name, file) != NULL){
 			numbering++;
+		
 			sprintf(fp, "%s/%s", path, dp->d_name);
 			if(stat(fp, &fs) == -1){continue;}
 			//char byte[16] = fs.st_size;
@@ -605,8 +611,9 @@ char* Print_number(char path[], char file[]){
 
 	return n_date;
 	*/
-
-	return arr[ans2];
+	char turn[256];
+	strcpy(turn, arr[ans2]);
+	return **turn;
 
 }
 
@@ -665,13 +672,13 @@ int Recover(Linklist** head, LogDetail* lhead, char file[], char path[]){
 	char name[256];
 	strcpy(name, f_name);
 	dir = opendir(path);
-	fprintf(stderr, "%s\n", path);
+	//fprintf(stderr, "%s\n", path);
 	while((dp = readdir(dir)) != NULL){
 		//if(dp->d_ino == 0) continue;
-		fprintf(stderr, "%s %s\n", dp->d_name, name);
+		//fprintf(stderr, "%s %s\n", dp->d_name, name);
 		if(strstr(dp->d_name, name) != NULL){
 			incl = 1;
-			fprintf(stderr,"%s %s\n",dp->d_name, name);
+			//fprintf(stderr,"%s %s\n",dp->d_name, name);
 			break;
 		}
 	}
@@ -684,7 +691,9 @@ int Recover(Linklist** head, LogDetail* lhead, char file[], char path[]){
 	//Print_log(lhead, file);
 
 	//char n_date[16]
-	char* n_date = Print_number(path, name); //리스트를 보여주는 함수. 반환되는 문자열은 파일 뒤에 붙는 시간부분을 의미
+	char n_date[256];
+	strcpy(n_date, Print_number(path, name)); //리스트를 보여주는 함수. 반환되는 문자열은 파일 뒤에 붙는 시간부분을 의미
+	fprintf(stderr,"Print number 값 반환 완료");
 	if(strcpy(n_date, "exit") == 0){
 		//모든 실행중인 백업 중지 후 프로그램 종료
 		//어차피 list 명령어가 쓸모가 없으므로 연결리스트 변경 X
@@ -698,6 +707,7 @@ int Recover(Linklist** head, LogDetail* lhead, char file[], char path[]){
 	}
 	char new_name[512];
 	sprintf(new_name, "%s_%s", name, n_date);
+	fprintf(stderr, "%s\n", new_name);
 	if(strcpy(dp->d_name, new_name) == 0){
 		R_Copy(new_name, file, path);
 	}
