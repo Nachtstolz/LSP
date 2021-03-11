@@ -354,7 +354,7 @@ int Add(Linklist** head, LogDetail* lhead, char path[], char file[], char option
 	//fprintf(stderr, "thread 만들기 완료\n");
 
 	//pthread_join(p_thread, (void*)&result);
-	pthread_detach(p_thread);
+	//pthread_detach(p_thread);
 		//pthread_mutex_destroy(&mutex);
 		//백업 진행
 		//Copy(path, file); //파일을 복사하는 작업을 함수로
@@ -418,7 +418,7 @@ int Remove(Linklist** head, LogDetail* lhead, char path[], char file[], char opt
 		fprintf(stderr, "head thread 취소 완료 \n");
 		Linklist* tmp = *head;
 		*head = (*head)->link;
-		hhead = *head;
+		//hhead = *head;
 		free(tmp);
 		Removelog2(file);
 
@@ -428,13 +428,14 @@ int Remove(Linklist** head, LogDetail* lhead, char path[], char file[], char opt
 
 	while(1){
 
-		if(strcmp(hhead->link->route, file) == 0){
+		Linklist* tmp = hhead->link;
+		if(strcmp(tmp->route, file) == 0){
 			//스레드에 영향을 미치는 함수
-			pthread_cancel(hhead->t_id);
+			pthread_cancel(tmp->t_id);
 
 			//head->link = head->link->link;
 			fprintf(stderr, "thread 취소 완료\n");
-			Linklist* tmp = hhead->link;
+			//Linklist* tmp = hhead->link;
 			if(tmp->link != NULL){
 			//	Linklist* tmp = hhead->link;
 				//Linklist* tmp = NULL;
@@ -564,32 +565,37 @@ char* Print_number(char path[], char file[]){
 	DIR* dir = NULL;
 	struct dirent *dp = NULL;
 	struct stat fs;
-	char fp[256];
+	char fp[512];
 	char ans[4];
 	char arr[256][256];
 
 	printf("%d. exit\n", numbering);
 	dir = opendir(path);
 	while((dp = readdir(dir)) != NULL){
+		fprintf(stderr, "%s %s\n", dp->d_name, file);
 		if(strstr(dp->d_name, file) != NULL){
 			numbering++;
-			sprintf(fp, "%s%s", path, dp->d_name);
+			sprintf(fp, "%s/%s", path, dp->d_name);
 			if(stat(fp, &fs) == -1){continue;}
 			//char byte[16] = fs.st_size;
-			char byte[16];
+			char byte[32];
 			//strcpy(byte, fs.st_size);
-			sprintf(byte, "%lld", fs.st_size);
+			sprintf(byte, "%lldbytes", fs.st_size);
 			char* date = strrchr(dp->d_name, '_');
-			sprintf(arr[numbering], "%d.%s", numbering, date);
+			date++;
+			//sprintf(arr[numbering], "%s", numbering, date);
+			strcpy(arr[numbering], date);
 			printf("%d. %s\t%s\n", numbering, date, byte);
 		}
 	}
-	puts("Choose file to recover : ");
+	printf("Choose file to recover : ");
 	fgets(ans, sizeof(ans), stdin);
 
 	char str[8];
 	char* n_date;	//char n_date[16];
-	sprintf(str, "%s.", ans);
+	int ans2;
+	ans2 = atoi(ans);
+	/*sprintf(str, "%s.", ans);
 	for(int i = 0; i<256; i++){
 		if(strstr(arr[i], str) != NULL){
 			n_date = strrchr(arr[i], '.');
@@ -598,6 +604,9 @@ char* Print_number(char path[], char file[]){
 	}
 
 	return n_date;
+	*/
+
+	return arr[ans2];
 
 }
 
@@ -642,6 +651,7 @@ int Recover(Linklist** head, LogDetail* lhead, char file[], char path[]){
 	}
 	if(fopen(file, "r") == NULL){//변경할 파일이 존재하지 않는 경우
 		puts("Fail to recover command");
+		fprintf(stderr,"%s\n", file);
 		return 1; //return 은 나중에 수정
 	}
 	
@@ -650,23 +660,31 @@ int Recover(Linklist** head, LogDetail* lhead, char file[], char path[]){
 	struct dirent *dp = NULL;
 	int incl = 0;
 	char* f_name = strrchr(file, '/');
+	f_name++;
+
+	char name[256];
+	strcpy(name, f_name);
 	dir = opendir(path);
+	fprintf(stderr, "%s\n", path);
 	while((dp = readdir(dir)) != NULL){
-		if(dp->d_ino == 0) continue;
-		if(strstr(dp->d_name, f_name) != NULL){
+		//if(dp->d_ino == 0) continue;
+		fprintf(stderr, "%s %s\n", dp->d_name, name);
+		if(strstr(dp->d_name, name) != NULL){
 			incl = 1;
+			fprintf(stderr,"%s %s\n",dp->d_name, name);
 			break;
 		}
 	}
 	if(incl == 0){
 		puts("Fail to recover command");
+		fprintf(stderr, "incl = 0");	
 		return 1; //return 부분 추후 수정
 	}
 
 	//Print_log(lhead, file);
 
 	//char n_date[16]
-	char* n_date = Print_number(path, f_name); //리스트를 보여주는 함수. 반환되는 문자열은 파일 뒤에 붙는 시간부분을 의미
+	char* n_date = Print_number(path, name); //리스트를 보여주는 함수. 반환되는 문자열은 파일 뒤에 붙는 시간부분을 의미
 	if(strcpy(n_date, "exit") == 0){
 		//모든 실행중인 백업 중지 후 프로그램 종료
 		//어차피 list 명령어가 쓸모가 없으므로 연결리스트 변경 X
@@ -678,8 +696,8 @@ int Recover(Linklist** head, LogDetail* lhead, char file[], char path[]){
 		return 0; //return 부분 수정해야
 		//pthread_exit();
 	}
-	char new_name[256];
-	sprintf(new_name, "%s_%s", f_name, n_date);
+	char new_name[512];
+	sprintf(new_name, "%s_%s", name, n_date);
 	if(strcpy(dp->d_name, new_name) == 0){
 		R_Copy(new_name, file, path);
 	}
