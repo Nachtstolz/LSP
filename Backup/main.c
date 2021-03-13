@@ -563,7 +563,7 @@ void Pring_log(LogDetail* lhead, char f_name[]){
 }
 */
 
-char** Print_number(char path[], char file[]){
+char* Print_number(char path[], char file[]){
 
 	int numbering = 0;
 	DIR* dir = NULL;
@@ -574,6 +574,7 @@ char** Print_number(char path[], char file[]){
 	char arr[256][256];
 
 	printf("%d. exit\n", numbering);
+	strcpy(arr[0],"exit");
 	dir = opendir(path);
 	while((dp = readdir(dir)) != NULL){
 		
@@ -601,6 +602,7 @@ char** Print_number(char path[], char file[]){
 	char* n_date;	//char n_date[16];
 	int ans2;
 	ans2 = atoi(ans);
+	fprintf(stderr, "%d\n", ans2);
 	/*sprintf(str, "%s.", ans);
 	for(int i = 0; i<256; i++){
 		if(strstr(arr[i], str) != NULL){
@@ -611,9 +613,17 @@ char** Print_number(char path[], char file[]){
 
 	return n_date;
 	*/
-	char turn[256];
-	strcpy(turn, arr[ans2]);
-	return **turn;
+	//char turn[256];
+	//strcpy(turn, arr[ans2]);
+
+	char* turn;
+	turn = (char*)malloc(256);
+	memset(turn, '\0', sizeof(turn));
+	//for(int i = 0; arr[ans2][i] != '\0'; i++){
+	strcat(turn, &arr[ans2][0]);
+	fprintf(stderr, "%s", turn);
+
+	return turn;
 
 }
 
@@ -621,9 +631,10 @@ void R_Copy(char new_name[], char file[], char path[]){ //Recover 명령어를 �
 	FILE* fp;
 	FILE* nf;
 	char p[256];
-	sprintf(p, "%s%s", path, new_name);
-	fp = fopen(file, "w");
-	nf = fopen(p, "r");
+	sprintf(p, "%s/%s", path, new_name);
+	fprintf(stderr, "p = %s\n", p);
+	fp = fopen(file, "w+");
+	nf = fopen(p, "r+");
 	while(1){
 		int c = getc(nf);
 		if(!feof(nf)){
@@ -644,18 +655,48 @@ int Recover(Linklist** head, LogDetail* lhead, char file[], char path[]){
 	int ch = Rec_check(hhead, file); //백업 파일이 현재 백업 리스트에 존재하는 경우 확인. 백업 수행 종료를 진행해야 함.
 	if(ch == 1){ //변경할 파일이 현재 백업 리스트에 존재하는 경우
 		//백업 수행 종료 관련 명령문 작성 예정
-		pthread_cancel(hhead->t_id);
-		Removelog2(hhead->route);
+		//pthread_cancel(hhead->t_id);
+		//Removelog2(hhead->route);
 		//백업 리스트에 없애기
 
+		if(strcmp((*head)->route, file) == 0){
+			pthread_cancel((*head)->t_id);
+
+			Linklist* tmp = *head;
+			*head = (*head)->link;
+			Removelog2(file);
+		}
+		
+		else{
+			while(1){
+				Linklist* tmp = hhead->link;
+				if(strcmp(tmp->route, file) == 0){
+					pthread_cancel(tmp->t_id);
+
+					if(tmp->link != NULL){
+						hhead->link = tmp->link;
+					}
+					else{
+						hhead->link = NULL;
+					}
+	
+					Removelog2(file);
+					break;
+				}
+				hhead = hhead->link;
+			}
+		}
+		/*
 		while(hhead->link != NULL){
 			Linklist* tmp = NULL;
 			tmp = hhead->link;
 			hhead->link = tmp->link;
-			free(tmp);
+			//free(tmp);
 		}
 		free(hhead);
+		*/
 	}
+
 	if(fopen(file, "r") == NULL){//변경할 파일이 존재하지 않는 경우
 		puts("Fail to recover command");
 		fprintf(stderr,"%s\n", file);
@@ -691,10 +732,13 @@ int Recover(Linklist** head, LogDetail* lhead, char file[], char path[]){
 	//Print_log(lhead, file);
 
 	//char n_date[16]
-	char n_date[256];
-	strcpy(n_date, Print_number(path, name)); //리스트를 보여주는 함수. 반환되는 문자열은 파일 뒤에 붙는 시간부분을 의미
-	fprintf(stderr,"Print number 값 반환 완료");
-	if(strcpy(n_date, "exit") == 0){
+	//char n_date[256];
+	char* n_date;
+	//strcpy(n_date, Print_number(path, name)); //리스트를 보여주는 함수. 반환되는 문자열은 파일 뒤에 붙는 시간부분을 의미
+	n_date = Print_number(path, name);
+	fprintf(stderr,"Print number 값 반환 완료\n");
+	fprintf(stderr, "%s\n", n_date);
+	if(strcmp(n_date, "exit") == 0){
 		//모든 실행중인 백업 중지 후 프로그램 종료
 		//어차피 list 명령어가 쓸모가 없으므로 연결리스트 변경 X
 		while(hhead != NULL){
@@ -707,8 +751,11 @@ int Recover(Linklist** head, LogDetail* lhead, char file[], char path[]){
 	}
 	char new_name[512];
 	sprintf(new_name, "%s_%s", name, n_date);
-	fprintf(stderr, "%s\n", new_name);
-	if(strcpy(dp->d_name, new_name) == 0){
+	//fprintf(stderr, "name : %s\nn_date : %s\n", name, n_date);
+	//fprintf(stderr, "new_name : %s\n", new_name);
+	fprintf(stderr, "dp->d_name : %s\n", dp->d_name);
+	fprintf(stderr, "new_name : %s\n", new_name);
+	if(strcmp(dp->d_name, new_name) == 0){
 		R_Copy(new_name, file, path);
 	}
 	FILE* fp;
