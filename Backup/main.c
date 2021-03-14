@@ -568,10 +568,11 @@ char* Print_number(char path[], char file[]){
 	int numbering = 0;
 	DIR* dir = NULL;
 	struct dirent *dp = NULL;
-	struct stat fs;
-	char fp[512];
+	//struct stat fs;
+	//char fp[512];
 	char ans[4];
 	char arr[256][256];
+	char sort[256][256];
 
 	printf("%d. exit\n", numbering);
 	strcpy(arr[0],"exit");
@@ -580,8 +581,14 @@ char* Print_number(char path[], char file[]){
 		
 	//	fprintf(stderr, "%s %s\n", dp->d_name, file);
 		if(strstr(dp->d_name, file) != NULL){
-			numbering++;
-		
+			//numbering++;
+			
+			//fprintf(stderr, "%d\n", numbering);
+			char* date = strrchr(dp->d_name, '_');
+			date++;			
+			//fprintf(stderr, "%s\n", date);
+			strcpy(sort[numbering], date);
+			/*
 			sprintf(fp, "%s/%s", path, dp->d_name);
 			if(stat(fp, &fs) == -1){continue;}
 			//char byte[16] = fs.st_size;
@@ -593,8 +600,50 @@ char* Print_number(char path[], char file[]){
 			//sprintf(arr[numbering], "%s", numbering, date);
 			strcpy(arr[numbering], date);
 			printf("%d. %s\t%s\n", numbering, date, byte);
+			*/
+			numbering++;
+		}
+
+	//	numbering++;
+	}
+
+	//fprintf(stderr, "sort 확인 : %s %s\n", sort[0], sort[1]);
+	//fprintf(stderr, "%d %d\n", atoi(sort[0]), atoi(sort[1]));
+
+	//strcpy(arr[1], '\0');
+	for(int i = 0; i<numbering; i++){
+		for(int j = i+1; j<numbering; j++){
+			//fprintf(stderr, "%s %s\n", sort[i], sort[j]);
+			if(strcmp(sort[i], sort[j]) > 0){
+				char tmp[256];
+				strcpy(tmp, sort[i]);
+				strcpy(sort[i], sort[j]);
+				strcpy(sort[j], tmp);
+				//fprintf(stderr, "%s\n", sort[j]);
+			}
 		}
 	}
+
+	//fprintf(stderr, "%s\n", arr[0]);
+//	fprintf(stderr, "%s\n", arr[1]);
+//	strcpy(arr[1], "number 1");
+	for(int i = 0; i<=numbering; i++){
+		strcpy(arr[i+1], sort[i]);
+//		fprintf(stderr, "%d : %s\t %d : %s\n", i+1, arr[i+1], i, sort[i]);
+	}
+	
+	for(int i = 1; i<=numbering; i++){
+		struct stat fs;
+		char fp[512];
+		sprintf(fp, "%s/%s_%s", path, file, arr[i]);
+	//	fprintf(stderr, "%s\n", fp);
+		if(stat(fp, &fs) == -1) continue;
+		
+		char byte[32];
+		sprintf(byte, "%lldbytes", fs.st_size);
+		printf("%d. %s\t%s\n", i, arr[i], byte);
+	}
+	
 	printf("Choose file to recover : ");
 	fgets(ans, sizeof(ans), stdin);
 
