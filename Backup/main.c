@@ -49,8 +49,8 @@ void Addlog2(char file[], int start){ //스레드 함수 내에 쓰일 add로그
 	time_t tt;
 	tm* td;
 
-	FILE* fp;
-	fp = fopen("./logfile", "a");
+	//FILE* fp;
+	//fp = fopen("./logfile", "a");
 	
 	time(&tt);
 	td = localtime(&tt);
@@ -71,8 +71,8 @@ void Addlog2(char file[], int start){ //스레드 함수 내에 쓰일 add로그
 		sprintf(log, "[%02d%02d%02d %02d%02d%02d] %s_%s %s\n", td_year, td_mon, td_day, td_hour, td_min, td_sec, file, edit_file, "generated");
 	}
 
-	fputs(log, fp);
-	fclose(fp);
+	fputs(log, logfile);
+	//fclose(logfile);
 
 	return;
 }
@@ -110,8 +110,8 @@ void Removelog(LogDetail* lhead, char file[]){ //로그파일에 로그 삭제
 */
 
 void Removelog2(char file[]){
-	FILE* fp;
-	fp = fopen("./logfile", "a");
+	//FILE* fp;
+	//fp = fopen("./logfile", "a");
 
 	time_t tt;
 	tm* td;
@@ -128,8 +128,8 @@ void Removelog2(char file[]){
 
 	char log[512];
 	sprintf(log, "[%02d%02d%02d %02d%02d%02d] %s %s\n", td_year, td_mon, td_day, td_hour, td_min, td_sec, file, "deleted");
-	fputs(log, fp);
-	fclose(fp);
+	fputs(log, logfile);
+	//fclose(fp);
 
 	return;
 }
@@ -651,7 +651,7 @@ char* Print_number(char path[], char file[]){
 	char* n_date;	//char n_date[16];
 	int ans2;
 	ans2 = atoi(ans);
-	fprintf(stderr, "%d\n", ans2);
+	//fprintf(stderr, "%d\n", ans2);
 	/*sprintf(str, "%s.", ans);
 	for(int i = 0; i<256; i++){
 		if(strstr(arr[i], str) != NULL){
@@ -670,7 +670,7 @@ char* Print_number(char path[], char file[]){
 	memset(turn, '\0', sizeof(turn));
 	//for(int i = 0; arr[ans2][i] != '\0'; i++){
 	strcat(turn, &arr[ans2][0]);
-	fprintf(stderr, "%s", turn);
+	//fprintf(stderr, "%s", turn);
 
 	return turn;
 
@@ -681,7 +681,7 @@ void R_Copy(char new_name[], char file[], char path[]){ //Recover 명령어를 �
 	FILE* nf;
 	char p[256];
 	sprintf(p, "%s/%s", path, new_name);
-	fprintf(stderr, "p = %s\n", p);
+	//fprintf(stderr, "p = %s\n", p);
 	fp = fopen(file, "w+");
 	nf = fopen(p, "r+");
 	while(1){
@@ -748,7 +748,7 @@ int Recover(Linklist** head, LogDetail* lhead, char file[], char path[]){
 
 	if(fopen(file, "r") == NULL){//변경할 파일이 존재하지 않는 경우
 		puts("Fail to recover command");
-		fprintf(stderr,"%s\n", file);
+		//fprintf(stderr,"%s\n", file);
 		return 1; //return 은 나중에 수정
 	}
 	
@@ -774,7 +774,7 @@ int Recover(Linklist** head, LogDetail* lhead, char file[], char path[]){
 	}
 	if(incl == 0){
 		puts("Fail to recover command");
-		fprintf(stderr, "incl = 0");	
+		//fprintf(stderr, "incl = 0");	
 		return 1; //return 부분 추후 수정
 	}
 
@@ -785,8 +785,8 @@ int Recover(Linklist** head, LogDetail* lhead, char file[], char path[]){
 	char* n_date;
 	//strcpy(n_date, Print_number(path, name)); //리스트를 보여주는 함수. 반환되는 문자열은 파일 뒤에 붙는 시간부분을 의미
 	n_date = Print_number(path, name);
-	fprintf(stderr,"Print number 값 반환 완료\n");
-	fprintf(stderr, "%s\n", n_date);
+	//fprintf(stderr,"Print number 값 반환 완료\n");
+	//fprintf(stderr, "%s\n", n_date);
 	if(strcmp(n_date, "exit") == 0){
 		//모든 실행중인 백업 중지 후 프로그램 종료
 		//어차피 list 명령어가 쓸모가 없으므로 연결리스트 변경 X
@@ -802,26 +802,32 @@ int Recover(Linklist** head, LogDetail* lhead, char file[], char path[]){
 	sprintf(new_name, "%s_%s", name, n_date);
 	//fprintf(stderr, "name : %s\nn_date : %s\n", name, n_date);
 	//fprintf(stderr, "new_name : %s\n", new_name);
-	fprintf(stderr, "dp->d_name : %s\n", dp->d_name);
-	fprintf(stderr, "new_name : %s\n", new_name);
+	//fprintf(stderr, "dp->d_name : %s\n", dp->d_name);
+	//fprintf(stderr, "new_name : %s\n", new_name);
 	if(strcmp(dp->d_name, new_name) == 0){
 		R_Copy(new_name, file, path);
 	}
+
+	//printf("Recovery success");
+	
 	FILE* fp;
 	fp = fopen(file, "r");
 	if(fp == NULL){
 		puts("Error to open file");
 		return 1;
 	}
+	
 	while(1){
 		int c = getc(fp);
 		if(!feof(fp)){
+		//	fputc(c, fp);
 			printf("%c", c);
 			//fseek(fp, 1, SEEK_CUR);
 		}else break;
 	}
 
 	fclose(fp);
+	printf("\nRecovery success\n");
 
 	return 1;
 }
@@ -1013,14 +1019,10 @@ int main(int argc, char* argv[]){
 	char path[256];
 	struct stat dir_info;
 	mode_t dir_mode;
-	//FILE* logfile;
 
-	//fprintf(stderr, "what");
-	logfile = fopen("./logfile", "w+");
-	/*if(logfile == NULL){ //a+ or ra로 읽기도 동시에 할 수 있는지..
-		
-	}*/
-	//fprintf(stderr, "the");
+
+//	logfile = fopen("./logfile"+, "w+");
+	
 	char backup[16];
 	int number = 1;
 	int dir_res;
@@ -1048,9 +1050,17 @@ int main(int argc, char* argv[]){
 		//fprintf(stderr, "%s\n", path);
 		dir_res = mkdir(path, 0775);
 	}
-		//printf("%d\n", dir_res); //체크 용도
+
+	char* lognum = strrchr(path, '/');
+	lognum++;
+	char n_logfile[256];
+	strcpy(n_logfile, "./logfile_");
+	strcat(n_logfile, lognum);
+	logfile = fopen(n_logfile, "a+");
+
+	//printf("%d\n", dir_res); //체크 용도
 	if(argc > 2){ //인자가 2개 이상
-		printf("Usage : %s", path);
+		printf("Usage : ./main %s", path);
 		//printf("\n인자가 2개 이상");
 		return 0;
 	}
@@ -1059,7 +1069,7 @@ int main(int argc, char* argv[]){
 	int re_stat = stat(path, &dir_info);
 	dir_mode = dir_info.st_mode;
 	if(!S_ISDIR(dir_mode)){ //디렉토리 파일이 아니라면
-		printf("Usage : %s", path);
+		printf("Usage : ./main %s [디렉토리 파일]", path);
 		//printf("\n디렉토리 파일 아님");
 		return 0;
 	}
@@ -1067,7 +1077,7 @@ int main(int argc, char* argv[]){
 	//접근권한
 	//if(dir_mode >= 0001){
 	if(access(path, R_OK) != 0){
-		printf("Usage : %s", path);
+		printf("Usage : ./main  %s", path);
 		//printf("\n%d", dir_mode);
 		//printf("\n접근 권한 잘못됨");
 		return 0;
